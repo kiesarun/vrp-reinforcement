@@ -5,12 +5,6 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 
-
-@app.route('/hello')
-def hello():
-    return "Hello World!"
-
-
 @app.route('/')
 def bestpath():
     db = connectDB()

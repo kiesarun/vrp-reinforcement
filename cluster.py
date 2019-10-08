@@ -23,16 +23,16 @@ def cluster(coor):
     # neigh = KNeighborsClassifier(n_neighbors=3)
     # neigh.fit(coordinates, clustered)
 
+    print(clustered)
+
     colors = ("red", "green", "blue","coral")
 
     _color = [colors[cluster] for cluster in clustered]
 
-    print(_color)
+    # print(_color)
 
     # print(neigh.predict([[15,15]]))
 
-
-    group = ("0", "1", "2")
     area = np.pi * 3
 
     # Plot
