@@ -3,7 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from matplotlib import pyplot as plt
 import numpy as np
 
-def clusterByKmean(coors):
+def clusterByKmean(coors,n):
 
     # coordinates = np.array([[10, 5], [20, 15], [15, 10], [30, 20], [30, 10], [20, 20]])
 
@@ -15,8 +15,8 @@ def clusterByKmean(coors):
 
     x = coordinates[:, 0]
     y = coordinates[:, 1]
-
-    kmeans = KMeans(n_clusters=3, random_state=0).fit(coordinates)
+    print(type(n))
+    kmeans = KMeans(n_clusters=n, random_state=0).fit(coordinates)
 
     # print(kmeans.labels_)
 
