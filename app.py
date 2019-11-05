@@ -1,5 +1,7 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask,Response,request
-from connectDB import connectDB
+from connectDB import connectOrdersDB
 from cluster import clusterByKmean
 from bson.json_util import dumps
 import traceback
@@ -11,7 +13,7 @@ def path():
     try:
         data = request.form
         print(data)
-        db = connectDB()
+        db = connectOrdersDB()
         orders = db['orders'].find()
 
         if (data['solution'] == 'kmean'):
@@ -24,7 +26,7 @@ def path():
             n = int(data['numberOfCars'])
             cars = clusterByKmean(coordinates,n)
 
-        db = connectDB()
+        db = connectOrdersDB()
         for c in cars:
             db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
 
@@ -32,4 +34,4 @@ def path():
 
     except Exception as e: print(e)
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
