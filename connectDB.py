@@ -16,12 +16,9 @@ def connectOrdersDB():
     if _db is not None:
         return _db
     else:
-        db_uri = f"mongodb://{db_user}:{db_pass}@{db_host}"
-        print(db_uri)
         if db_user:
-            connect = MongoClient(
-                f"mongodb://{db_user}:{db_pass}@{db_host}", authSource=db_database)
+            connect = MongoClient(f"mongodb://{db_user}:{db_pass}@{db_host}", authSource=db_database)
         else:
-            connect = MongoClient(f"mongodb://{db_host}")
+            connect = MongoClient("localhost")
         _db = connect.get_database(db_database)
         return _db
