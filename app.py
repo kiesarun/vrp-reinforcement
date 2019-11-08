@@ -16,7 +16,6 @@ app = Flask(__name__)
 def path():
     try:
         data = request.form
-        print(data)
         db = connectOrdersDB()
         orders = db['orders'].find()
 
