@@ -21,24 +21,33 @@ def path():
 
         if data['solution'] == 'kmean':
             coordinates = []
+            # prepared_data = []
             for order in orders:
                 coordinates.append({
                     'id': order['_id'],
                     'coor': order['coordinates']
                 })
-            n = int(data['numberOfCars'])
-            cars = clusterByKmean(coordinates, n)
-            # print(cars)
-            # for i in range(n):
-            #     prepared_data = prepareData(cars,i)
-            #     # print('prepared_data:', prepared_data)
-            #     delivery_order = travellingSales(prepared_data)
-            #     # print('delivery_order:', delivery_order)
+            number_of_cars = int(data['numberOfCars'])
+            grouped_cars = clusterByKmean(coordinates, number_of_cars) 
+
+            for num in range(number_of_cars):    
+                # prepared_data.append(prepareData(grouped_cars,num))
+                prepared_data = prepareData(grouped_cars,num)
+                # print('preeeeeeeeepareeeeeeedddd :::::::::::::: ', preoared_data)
+                travellingSales(prepared_data)
 
             db = connectOrdersDB()
-            for c in cars:
-                db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
-                # db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])},{"deliveryNo": int(c['delivery_No'])}})
+            # for c in grouped_cars:
+                # db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
+
+            # for i in range(number_of_cars):
+            #     delivery = 0
+            #     for c in grouped_cars:
+            #         if c['carNumber'] == i:
+            #             delivery = delivery+1
+            #             print(c['carNumber'], i)
+            #             db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
+            #             db['orders'].update_one({"_id": c['id']}, {"$set": {"deliveryOrder": delivery}})
 
         return 'success'
 

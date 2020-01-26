@@ -1,9 +1,8 @@
-def prepareData(coors,i):
-    # print('ccccccccccccccccccccccccccccccccc',coors)
-    coors_separated = []
-    coor = []
-    for c in coors:
-        if c['carNumber'] == i:
-            coor.append((c['coor'][0],c['coor'][1],c['id'],c['carNumber']))
+def prepareData(grouped_cars,car_number,):
+    prepared_data = []
 
-    return coor
+    for grouped_c in grouped_cars:
+        if grouped_c['carNumber'] == car_number:
+            prepared_data.append(grouped_c)
+                
+    return prepared_data
