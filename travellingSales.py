@@ -27,9 +27,9 @@ def travellingSales(prepared_data):
     # Initialize fitness function object using dist_list
     fitness_dists = mlrose.TravellingSales(distances = dist_list)
 
-    problem_fit = mlrose.TSPOpt(length = number_of_orders, fitness_fn = fitness_coords,maximize=False)
+    problem_fit = mlrose.TSPOpt(length = number_of_orders, fitness_fn = fitness_coords, maximize=False)
 
-    problem_no_fit = mlrose.TSPOpt(length = number_of_orders, coords = coords_list,maximize=False)
+    problem_no_fit = mlrose.TSPOpt(length = number_of_orders, coords = coords_list, maximize=False)
 
     # Solve problem using the genetic algorithm
     best_state, best_fitness = mlrose.genetic_alg(problem_fit, random_state = 2)
