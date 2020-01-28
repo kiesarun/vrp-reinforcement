@@ -21,7 +21,7 @@ def path():
 
         if data['solution'] == 'kmean':
             coordinates = []
-            # prepared_data = []
+            completed_data = []
             for order in orders:
                 coordinates.append({
                     'id': order['_id'],
@@ -34,11 +34,17 @@ def path():
                 # prepared_data.append(prepareData(grouped_cars,num))
                 prepared_data = prepareData(grouped_cars,num)
                 # print('preeeeeeeeepareeeeeeedddd :::::::::::::: ', preoared_data)
-                travellingSales(prepared_data)
+                delivery = travellingSales(prepared_data)
+                # print('delivery dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ++++++++++++++++++++++++++ ', delivery, num)
+                completed_data.append(delivery)
 
             db = connectOrdersDB()
-            # for c in grouped_cars:
-                # db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
+            for i in range(number_of_cars):
+              print('round', i)
+              for order in completed_data[i]:
+                print(order)
+                db['orders'].update_one({"_id": order['id']}, {"$set": {"carNumber": int(order['carNumber'])}})
+                db['orders'].update_one({"_id": order['id']}, {"$set": {"deliveryOrder": int(order['delivery'])}})
 
             # for i in range(number_of_cars):
             #     delivery = 0
