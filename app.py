@@ -30,30 +30,21 @@ def path():
             number_of_cars = int(data['numberOfCars'])
             grouped_cars = clusterByKmean(coordinates, number_of_cars) 
 
-            for num in range(number_of_cars):    
-                # prepared_data.append(prepareData(grouped_cars,num))
-                prepared_data = prepareData(grouped_cars,num)
-                # print('preeeeeeeeepareeeeeeedddd :::::::::::::: ', preoared_data)
-                delivery = travellingSales(prepared_data)
-                # print('delivery dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ++++++++++++++++++++++++++ ', delivery, num)
-                completed_data.append(delivery)
+            prepared_data = prepareData(grouped_cars,number_of_cars)
+            completed_data = travellingSales(prepared_data)
+
+            # for num in range(number_of_cars):    
+            #     prepared_data = prepareData(grouped_cars,num)
+            #     delivery = travellingSales(prepared_data)
+            #     completed_data.append(delivery)
 
             db = connectOrdersDB()
-            for i in range(number_of_cars):
+            for i in range(len(completed_data)):
               print('round', i)
               for order in completed_data[i]:
                 print(order)
                 db['orders'].update_one({"_id": order['id']}, {"$set": {"carNumber": int(order['carNumber'])}})
                 db['orders'].update_one({"_id": order['id']}, {"$set": {"deliveryOrder": int(order['delivery'])}})
-
-            # for i in range(number_of_cars):
-            #     delivery = 0
-            #     for c in grouped_cars:
-            #         if c['carNumber'] == i:
-            #             delivery = delivery+1
-            #             print(c['carNumber'], i)
-            #             db['orders'].update_one({"_id": c['id']}, {"$set": {"carNumber": int(c['carNumber'])}})
-            #             db['orders'].update_one({"_id": c['id']}, {"$set": {"deliveryOrder": delivery}})
 
         return 'success'
 
