@@ -6,9 +6,9 @@ from connectDB import connectOrdersDB
 from clusterByKmean import clusterByKmean
 from travellingSales import travellingSales
 from prepareData import prepareData
+from reinforcment import State
 from bson.json_util import dumps
 import traceback
-
 app = Flask(__name__)
 
 
@@ -19,32 +19,29 @@ def path():
         db = connectOrdersDB()
         orders = db['orders'].find()
 
-        if data['solution'] == 'kmean':
-            coordinates = []
-            completed_data = []
-            for order in orders:
-                coordinates.append({
-                    'id': order['_id'],
-                    'coor': order['coordinates']
-                })
-            number_of_cars = int(data['numberOfCars'])
-            grouped_cars = clusterByKmean(coordinates, number_of_cars) 
+        s1 = State(orders)
 
-            prepared_data = prepareData(grouped_cars,number_of_cars)
-            completed_data = travellingSales(prepared_data)
+        # if data['solution'] == 'kmean':
+        #     coordinates = []
+        #     completed_data = []
+        #     for order in orders:
+        #         coordinates.append({
+        #             'id': order['_id'],
+        #             'coor': order['coordinates']
+        #         })
+        #     number_of_cars = int(data['numberOfCars'])
+        #     grouped_cars = clusterByKmean(coordinates, number_of_cars) 
 
-            # for num in range(number_of_cars):    
-            #     prepared_data = prepareData(grouped_cars,num)
-            #     delivery = travellingSales(prepared_data)
-            #     completed_data.append(delivery)
+        #     prepared_data = prepareData(grouped_cars,number_of_cars)
+        #     completed_data = travellingSales(prepared_data)
 
-            db = connectOrdersDB()
-            for i in range(len(completed_data)):
-              print('round', i)
-              for order in completed_data[i]:
-                print(order)
-                db['orders'].update_one({"_id": order['id']}, {"$set": {"carNumber": int(order['carNumber'])}})
-                db['orders'].update_one({"_id": order['id']}, {"$set": {"deliveryOrder": int(order['delivery'])}})
+        #     db = connectOrdersDB()
+        #     for i in range(len(completed_data)):
+        #       print('round', i)
+        #       for order in completed_data[i]:
+        #         print(order)
+        #         db['orders'].update_one({"_id": order['id']}, {"$set": {"carNumber": int(order['carNumber'])}})
+        #         db['orders'].update_one({"_id": order['id']}, {"$set": {"deliveryOrder": int(order['delivery'])}})
 
         return 'success'
 
