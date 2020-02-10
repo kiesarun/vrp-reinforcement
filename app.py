@@ -20,6 +20,7 @@ def path():
         orders = db['orders'].find()
 
         s1 = State(orders)
+        s1.takeAction()
 
         # if data['solution'] == 'kmean':
         #     coordinates = []
