@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 from math import cos, asin, sqrt
 
 CAR_CAPACITY = 10
@@ -32,22 +33,38 @@ class State:
     def selectOrder(self):
         max = 0
         selected_order = ''
+        coors = []
         for order in self.cars[0]:
             dist = self.distanceBetweenCoordinate(ROOT_NODE[0], ROOT_NODE[1], order['coordinates'][0], order['coordinates'][1])
             order['distanceFromRoot'] = dist
+
+            coors.append((order['coordinates'][0], order['coordinates'][1]))
+
             if dist > max:
                 max = dist
                 selected_order = order
+        # self.plotCoors(coors)
         return selected_order
+
+    def plotCoors(self,coors):
+        coordinates = np.array(coors)
+        x = coordinates[:, 0]
+        y = coordinates[:, 1]
+
+        area = np.pi * 3
+        plt.scatter(x, y, s=area , alpha=0.5)
+        
+        plt.title('Scatter plot pythonspot.com')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.show()
+
             
     def takeAction(self):
-        while (True):
-            self.carDeliverable()
-            if (self.finish == False):
-                select_order = self.selectOrder()
-                print(type(self.cars[0]))
-            else:
-                break
+        self.carDeliverable()
+        if (self.finish == False):
+            select_order = self.selectOrder()
+            print('selected ', select_order)
 
             
 # if __name__ == "__main__":
