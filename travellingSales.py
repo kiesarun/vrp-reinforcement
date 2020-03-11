@@ -1,5 +1,6 @@
 import mlrose
 from math import cos, asin, sqrt
+import numpy as np
 
 
 def travellingSales(prepared_data):
@@ -60,11 +61,11 @@ def travelSalesMan(orders):
         number_of_orders = len(coordinates)
 
         dist_list = []
-        # for i, order1 in enumerate(orders):
-        #     for j, order2 in enumerate(orders):
-        #         if i < j:
-        #             dist_list.append((i, j, computeDistance(order1.coordinate['lat'], order1.coordinate['lon'],
-        #                                                     order2.coordinate['lat'], order2.coordinate['lon'])))
+        for i, order1 in enumerate(orders):
+            for j, order2 in enumerate(orders):
+                if i < j:
+                    dist_list.append((i, j, computeDistance(order1.coordinate['lat'], order1.coordinate['lon'],
+                                                            order2.coordinate['lat'], order2.coordinate['lon'])))
 
         # Initialize fitness function object using coords_list
         # fitness_coords = mlrose.TravellingSales(distances=dist_list)
@@ -78,13 +79,13 @@ def travelSalesMan(orders):
         #              (3, 6, 5.0990), (3, 7, 4.1231), (4, 5, 2.2361), (4, 6, 3.1623),
         #              (4, 7, 2.2361), (5, 6, 2.2361), (5, 7, 3.1623), (6, 7, 2.2361)]
 
-        print(dist_list)
+        # print(dist_list)
         # Initialize fitness function object using dist_list
-        # fitness_dists = mlrose.TravellingSales(distances=dist_list)
-        fitness_coords = mlrose.TravellingSales(coords=coordinates)
+        fitness_dists = mlrose.TravellingSales(distances=dist_list)
+        # fitness_coords = mlrose.TravellingSales(coords=coordinates)
 
-        # problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_dists, maximize=False)
-        problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_coords, maximize=False)
+        problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_dists, maximize=False)
+        # problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_coords, maximize=False)
 
         # coords_list = [(1, 1), (4, 2), (5, 2), (6, 4), (4, 4), (3, 6),
         #            (1, 5), (2, 3)]
@@ -105,3 +106,47 @@ def computeDistance(lat1, lon1, lat2, lon2):
     a = 0.5 - cos((lat2 - lat1) * p) / 2 + cos(lat1 * p) * \
         cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
     return 12742 * asin(sqrt(a))  # 2*R*asin... as km.
+
+
+def path_distance(routes, cities):
+    distances = 0
+
+    for r in range(len(routes)):
+        currentNode = cities[routes[r - 1]]
+        nextNode = cities[routes[r]]
+
+        c_dist = computeDistance(currentNode[0], currentNode[1], nextNode[0], nextNode[1])
+
+        distances += c_dist
+
+    return distances
+
+
+# Reverse the order of all elements from element i to element k in array r.
+two_opt_swap = lambda r, i, k: np.concatenate((r[0:i], r[k:-len(r) + i - 1:-1], r[k + 1:len(r)]))
+
+
+def two_opt(orders, improvement_threshold):  # 2-opt Algorithm adapted from https://en.wikipedia.org/wiki/2-opt
+    if len(orders) < 2:
+        return 0
+    cities = []
+    for order in orders:
+        cities.append((order.coordinate['lat'], order.coordinate['lon']))
+    number_of_orders = len(cities)
+    cities = np.array(cities)
+    route = np.arange(cities.shape[0])  # Make an array of row numbers corresponding to cities.
+    improvement_factor = 1  # Initialize the improvement factor.
+    best_distance = path_distance(route, cities)  # Calculate the distance of the initial path.
+    # print(f'best distance: {best_distance}')
+    while improvement_factor > improvement_threshold:  # If the route is still improving, keep going!
+        distance_to_beat = best_distance  # Record the distance at the beginning of the loop.
+        for swap_first in range(1, len(route) - 2):  # From each city except the first and last,
+            for swap_last in range(swap_first + 1, len(route)):  # to each of the cities following,
+                new_route = two_opt_swap(route, swap_first, swap_last)  # try reversing the order of these cities
+                new_distance = path_distance(new_route, cities)  # and check the total distance with this modification.
+                # print(f'new distance: {new_distance}')
+                if new_distance < best_distance:  # If the path distance is an improvement,
+                    route = new_route  # make this the accepted best route
+                    best_distance = new_distance  # and update the distance corresponding to this route.
+        improvement_factor = 1 - best_distance / distance_to_beat  # Calculate how much the route has improved.
+    return best_distance # When the route is no longer improving substantially, stop searching and return the route.

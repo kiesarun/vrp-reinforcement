@@ -21,7 +21,7 @@ def path():
         orders = db['orders'].find()
 
         # s1 = State(orders)
-        # s1.takeAction()
+        # s1.take_action()
 
         # g = Genetic(orders)
 
