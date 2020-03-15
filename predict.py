@@ -1,5 +1,12 @@
+import random
+import numpy as np
+
+random.seed(5555)
+np.random.seed(5555)
+
 from qLearning import QLearning
 import time
+
 
 def model_predict(agent):
     start_time = time.time()
@@ -13,7 +20,8 @@ def model_predict(agent):
 
         if state == 8:
             done = True
-            print("--- %s seconds (model predict) ---" % (time.time() - start_time))
+            time_use = time.time() - start_time
+            print("model predict ", time_use, ' seconds')
 
 
 def print_result(agent):
