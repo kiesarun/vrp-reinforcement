@@ -1,7 +1,7 @@
 import numpy as np
 import random
-import winsound
-from IPython.display import clear_output
+# import winsound
+# from IPython.display import clear_output
 from orders import Order
 from car import Car
 from simulator import Simulator
@@ -10,6 +10,7 @@ ALL_ORDERS = 300
 
 frequency = 2500  # Set Frequency To 2500 Hertz
 duration = 3000  # Set Duration To 1000 ms == 1 second
+
 
 class QLearning:
     def __init__(self, learning_rate=0.1, is_train = True):
@@ -41,7 +42,7 @@ class QLearning:
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
-            file_name = 'qtable0.np'
+            file_name = 'qtable_cumulative.np'
             while not done:
                 if random.uniform(0, 1) < self.epsilon:
                     action = random.randint(0, 6)
@@ -84,8 +85,7 @@ class QLearning:
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
-                    winsound.Beep(frequency, duration)
-                    file_name = 'qtable' + str(i) + '.np'
+                    # winsound.Beep(frequency, duration)
                     done = True
 
             self.epsilon = self.epsilon - 0.01
@@ -94,7 +94,7 @@ class QLearning:
                 self.epsilon = 0.2
 
             if i % 100 == 0:
-                clear_output(wait=True)
+                # clear_output(wait=True)
                 print(f"Episode: {i}")
                 # print(self.q_table)
 
@@ -112,7 +112,7 @@ class QLearning:
 if __name__ == "__main__":
     agent = QLearning()
     # agent.load_model()
-    # agent.training()
+    agent.training()
 
     # car = Car()
     # for i in range(ALL_ORDERS):

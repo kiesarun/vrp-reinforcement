@@ -6,10 +6,6 @@ from connectDB import connectOrdersDB
 from clusterByKmean import clusterByKmean
 from travellingSales import travellingSales
 from prepareData import prepareData
-from reinforcment import State
-from geneticAlgo import Genetic
-from bson.json_util import dumps
-import traceback
 app = Flask(__name__)
 
 

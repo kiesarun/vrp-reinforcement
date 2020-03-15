@@ -15,8 +15,8 @@ class Order:
             'lon': random.uniform(100.1, 100.5)
         }
         self.width = random.uniform(10, 50)
-        self.height = random.uniform(2, 80)
-        self.length = random.uniform(15, 80)
+        self.height = random.uniform(2, 100)
+        self.length = random.uniform(15, 100)
         self.carNumber = 0
         self.deliveryOrder = 0
         # self.index = index
