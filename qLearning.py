@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import string
+import winsound
 from IPython.display import clear_output
 from math import cos, asin, sqrt
 from travellingSales import two_opt
@@ -14,10 +15,13 @@ ROOT_NODE = {
 ALL_ORDERS = 300
 
 
-CAR_WIDTH = 150
-CAR_LENGTH = 200
-CAR_HEIGHT = 180
+CAR_WIDTH = 152
+CAR_LENGTH = 230
+CAR_HEIGHT = 200
 CAR_VOLUME = CAR_LENGTH * CAR_HEIGHT * CAR_WIDTH
+
+frequency = 2500  # Set Frequency To 2500 Hertz
+duration = 3000  # Set Duration To 1000 ms == 1 second
 
 
 def compute_distance(lat1, lon1, lat2, lon2):
@@ -33,9 +37,9 @@ class Order:
             'lat': random.uniform(13.6, 13.9),
             'lon': random.uniform(100.1, 100.5)
         }
-        self.width = random.uniform(10, 80)
-        self.height = random.uniform(2, 100)
-        self.length = random.uniform(15, 100)
+        self.width = random.uniform(10, 50)
+        self.height = random.uniform(2, 80)
+        self.length = random.uniform(15, 80)
         self.carNumber = 0
         self.deliveryOrder = 0
         # self.index = index
@@ -49,11 +53,12 @@ class Car:
     def __init__(self):
         # self.carIndex = carIndex
         self.orders = []
-        self.distance = 1000
+        self.distance = 0
         self.centroid = {
             'lat': 0,
             'lon': 0
         }
+        self.volume = 0
         # self.deliveryStatus = False
         # self.isFull = False
 
@@ -77,17 +82,26 @@ class Car:
             self.centroid['lat'] = lat / number_of_orders
             self.centroid['lon'] = lon / number_of_orders
 
+    def set_volume(self):
+        volume = 0
+        for order in self.orders:
+            volume = volume + (order.width * order.height * order.length)
+
 
 class Simulator:
     def __init__(self, init_car=None):
         if init_car:
             self.init_car = copy.deepcopy(init_car)
             self.cars = copy.deepcopy(init_car)
-        self.all_cars_can_deliveried = False
+        self.can_delivery_cars = 0
+        # self.not_full_cars = 0
+        self.not_excess_cars = 0
 
     def reset(self):
         self.cars = copy.deepcopy(self.init_car)
-        self.all_cars_can_deliveried = False
+        self.can_delivery_cars = 0
+        # self.not_full_cars = 0
+        self.not_excess_cars = 0
         print('reset simulator')
 
     def find_farthest_order(self, car_index):
@@ -104,18 +118,24 @@ class Simulator:
 
     def find_nearest_car_and_order(self, lat, lon, car_index):
         min_distance = 1000
+        min_centroid_distance = 1000
         nearest_car = 0
         nearest_order = 0
-        for i, car in enumerate(self.cars):
-            if i != car_index:
-                if len(car.orders) > 0:
-                    for j, order in enumerate(car.orders):
-                        distance = compute_distance(lat, lon, order.coordinate['lat'], order.coordinate['lon'])
+        if len(self.cars) > 1:
+            for i, car in enumerate(self.cars):
+                if i != car_index:
+                    centroid_distance = compute_distance(lat, lon, car.centroid['lat'], car.centroid['lon'])
+                    if centroid_distance < min_centroid_distance:
+                        min_centroid_distance = centroid_distance
+                        nearest_car = i
 
-                        if distance < min_distance:
-                            min_distance = distance
-                            nearest_order = j
-                            nearest_car = i
+        if len(self.cars[nearest_car].orders) > 0:
+            for j, order in enumerate(self.cars[nearest_car].orders):
+                distance = compute_distance(lat, lon, order.coordinate['lat'], order.coordinate['lon'])
+
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_order = j
         return nearest_car, nearest_order
 
     def move_order(self, origin_car_index, destination_car_index, order_index):
@@ -124,7 +144,8 @@ class Simulator:
             destination_car_orders = self.cars[destination_car_index].orders
             selected_order = origin_car_orders.pop(order_index)
             destination_car_orders.append(selected_order)
-            self.set_distance_and_centroid_all_cars()
+            self.set_distance_and_centroid_and_volume(origin_car_index)
+            self.set_distance_and_centroid_and_volume(destination_car_index)
             # print('moved', order_index, 'from car ', origin_car_index, 'to car ', destination_car_index)
 
     def get_max_order_car_index(self):
@@ -146,17 +167,28 @@ class Simulator:
                 min_orders = number_of_order
         return car_index
 
-    def set_distance_and_centroid_all_cars(self):
+    def set_distance_and_centroid_and_volume(self, car_index):
+        if len(self.cars[car_index].orders) < ALL_ORDERS / 1.5:
+            self.cars[car_index].set_distance()
+        else:
+            self.cars[car_index].distance = 1000
+        self.cars[car_index].set_centroid()
+        self.cars[car_index].set_volume()
+
+
+    def set_distance_and_centroid_and_volume_all_cars(self):
         if len(self.cars) == 1:
             self.cars[0].distance = 1000
             self.cars[0].set_centroid()
+            self.cars[0].set_volume()
         else:
             for car in self.cars:
                 if len(car.orders) > ALL_ORDERS / 1.5:
-                    car.set_centroid()
+                    car.distance = 1000
                 else:
                     car.set_distance()
-                    car.set_centroid()
+                car.set_centroid()
+                car.set_volume()
 
     def get_min_volume_order(self):
         min_volume = CAR_VOLUME
@@ -172,15 +204,11 @@ class Simulator:
                     car_id = i
         return order_volume, order_id, car_id
 
-    # def get_cars_volume(self):
-    #     cars_volume = []
-    #     for car in self.cars:
-    #         car_volume = 0
-    #         for order in car.orders:
-    #             order_volume = order.length * order.height * order.width
-    #             car_volume = car_volume + order_volume
-    #         cars_volume.append(car_volume)
-    #     return cars_volume
+    def get_avg_volume(self):
+        volume = 0
+        for car in self.cars:
+            volume = volume + car.volume
+        return volume / len(self.cars)
 
     def is_full(self, car_index):
         car_volume = 0
@@ -193,38 +221,44 @@ class Simulator:
                 return False
 
     def is_full_all_cars(self):
-        is_full = 0
+        # is_full = 0
         is_excess_volume = 0
         number_of_cars = len(self.cars)
-        for car in self.cars:
+        print('CAR VOLUME', CAR_VOLUME)
+        for i, car in enumerate(self.cars):
             car_volume = 0
             for order in car.orders:
                 order_volume = order.length * order.height * order.width
                 car_volume = car_volume + order_volume
             if car_volume >= CAR_VOLUME:
-                is_full = is_full + 1
                 is_excess_volume = is_excess_volume + 1
+                print('car', i, 'volume: ', car_volume, 'FULL')
             else:
-                car_space = CAR_VOLUME - car_volume
-                min_order_volume, min_order_id, min_order_car = self.get_min_volume_order()
-                if car_space < min_order_volume:
-                    is_full = is_full + 1
-        if is_full < number_of_cars:
-            if is_excess_volume < number_of_cars:
-                state = '11'
-            elif is_excess_volume == 0:
-                state = '10'
-            else:
-                state = '12'
-        elif is_full == 0:
-            state = '00'
+                print('car', i, 'volume: ', car_volume)
+        if is_excess_volume == 0:
+            state = '0'
+        elif is_excess_volume < len(self.cars):
+            state = '1'
         else:
-            if is_excess_volume < number_of_cars:
-                state = '21'
-            elif is_excess_volume == 0:
-                state = '20'
-            else:
-                state = '22'
+            state = '2'
+        # if is_full == 0:
+        #     state = '00'
+        # elif is_full < number_of_cars:
+        #     if is_excess_volume == 0:
+        #         state = '10'
+        #     elif is_excess_volume < number_of_cars:
+        #         state = '11'
+        #     else:
+        #         state = '12'
+        # else:
+        #     if is_excess_volume == 0 :
+        #         state = '20'
+        #     elif is_excess_volume < number_of_cars:
+        #         state = '21'
+        #     else:
+        #         state = '22'
+        # self.not_full_cars = number_of_cars - is_full
+        self.not_excess_cars = number_of_cars - is_excess_volume
         return state
 
         # else:
@@ -237,28 +271,36 @@ class Simulator:
         is_delivery_check = 0
         for i, car in enumerate(self.cars):
             number_of_order = len(car.orders)
-            is_delivery, total_distance = self.is_delivery(i)
+            is_delivery= self.is_delivery(i)
             if is_delivery:
                 is_delivery_check = is_delivery_check + 1
 
-        if is_delivery_check < len(self.cars):
-            state = '1'
-        elif is_delivery == 0:
+        if is_delivery_check == 0:
             state = '0'
+        elif is_delivery_check < len(self.cars):
+            state = '1'
         else:
             state = '2'
+        self.can_delivery_cars = is_delivery_check
         return state
 
     def is_delivery(self, car_index):
-        is_delivery = 0
+        # is_delivery = 0
         number_of_order = len(self.cars[car_index].orders)
         total_distance = self.cars[car_index].distance
-        if 240 >= total_distance > 100:
+        if 240 >= total_distance >= 50:
             print(number_of_order,'order', 'tatal distance : ', total_distance, 'car', car_index, 'can delivery')
-            return True, total_distance
+            return True
         else:
-            print(number_of_order,'order', 'tatal distance : ', total_distance, 'car', car_index, 'can not delivery')
-            return False, total_distance
+            print(number_of_order,'order', 'tatal distance : ', total_distance, 'car', car_index)
+            return False
+
+    def get_finish_cars(self):
+        finish_cars = 0
+        for i, car in enumerate(self.cars):
+            if not self.is_full(i) and self.is_delivery(i):
+                finish_cars = finish_cars + 1
+        return finish_cars
 
     def get_average_distance(self):
         distance = 0
@@ -270,89 +312,74 @@ class Simulator:
     def get_state(self):
         is_full_state = self.is_full_all_cars()
         is_delivery_state = self.is_delivery_all_car()
-        state_string = is_full_state + is_delivery_state
-        if state_string == '211':
-            state = 0
-        if state_string == '201':
-            state = 1
-        if state_string == '221':
+        state_string = is_delivery_state + is_full_state
+        if state_string == '00':
             state = 2
-        if state_string == '210':
-            state = 3
-        if state_string == '200':
-            state = 4
-        if state_string == '220':
+        elif state_string == '01':
+            state = 1
+        elif state_string == '02':
+            state = 0
+        elif state_string == '10':
             state = 5
-        if state_string == '212':
-            state = 6
-        if state_string == '202':
-            state = 7
-        if state_string == '222':
+        elif state_string == '11':
+            state = 4
+        elif state_string == '12':
+            state = 3
+        elif state_string == '20':
             state = 8
-        if state_string == '111':
-            state = 9
-        if state_string == '101':
-            state = 10
-        if state_string == '112':
-            state = 11
-        if state_string == '110':
-            state = 12
-        if state_string == '100':
-            state = 13
-        if state_string == '102':
-            state = 14
-        if state_string == '121':
-            state = 15
-        if state_string == '120':
-            state = 16
-        if state_string == '122':
-            state = 17
-        if state_string == '001':
-            state = 18
-        if state_string == '000':
-            state = 19
-        if state_string == '002':
-            state = 20
+        elif state_string == '21':
+            state = 7
+        else:
+            state = 6
         return state
 
     def take_action(self, action):
         if action == 0:
             reward = self.add_car()
-            new_state = self.get_state()
-        if action == 1:
+        elif action == 1:
             reward = self.move_farthest_order_from_most_orders_to_nearest_car()
-            new_state = self.get_state()
-        if action == 2:
+        elif action == 2:
             reward = self.move_nearest_order_of_least_order_car()
-            new_state = self.get_state()
-        if action == 3:
+        elif action == 3:
             reward = self.move_nearest_order_of_car_that_not_full_and_can_delivery()
-            new_state = self.get_state()
-        if action == 4:
+        elif action == 4:
             reward = self.move_most_distance_to_nearest()
-            new_state = self.get_state()
-        if action == 5:
+        elif action == 5:
+            reward = self.move_from_full_car_and_can_not_delivery_to_nearest_car()
+        else:
             reward = self.delete_car()
-            new_state = self.get_state()
 
-        print('action : ', action)
-        print('reward : ', reward)
-        print('new state : ', new_state)
-        print('#################################################################')
+        new_state = self.get_state()
+        reward = np.tanh(reward)
+
+        # print('action : ', action)
+        # print('reward : ', reward)
+        # print('new state : ', new_state)
+        # print('#################################################################')
 
         return reward, new_state
 
     # New ACtion
     def add_car(self):
-        is_full = self.is_full_all_cars()
+        is_full_state = self.is_full_all_cars()
+        is_delivery = self.is_delivery_all_car()
+        previous_avg_distance, previous_all_distance = self.get_average_distance()
+        previous_avg_volume = self.get_avg_volume()
         self.cars.append(Car())
-        average_distance, all_distance= self.get_average_distance()
-        if is_full == '21' or is_full == '20' or is_full == '22':
-            # reward = -average_distance + 100
-            reward = (- average_distance * 2) - all_distance + 1000
+        new_car = len(self.cars) - 1
+        average_distance, all_distance = self.get_average_distance()
+        most_order_car = self.get_max_order_car_index()
+        farthest_order_index = self.find_farthest_order(most_order_car)
+        self.move_order(most_order_car, new_car, farthest_order_index)
+        current_volume = self.get_avg_volume()
+        if is_full_state == '2' or is_delivery != '2':
+            number_of_cars = len(self.cars)
+            finish_cars = self.get_finish_cars()
+            # reward = - ((all_distance - previous_all_distance) * (cant_delivery_car + excess_cars + 1)) - 100
+            # reward = - ((all_distance - previous_all_distance) * (cant_delivery_car + 1)) + ((current_volume - previous_avg_volume) * (excess_cars + 1)) - 100
+            reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars - 50
         else:
-            # reward = -self.get_average_distance() - 100
-            reward = (- average_distance * 2) - all_distance - 1000
+            reward = -10000
         return reward
 
     def move_farthest_order_from_most_orders_to_nearest_car(self):
@@ -360,14 +387,22 @@ class Simulator:
         # if not is_full:
         if len(self.cars) > 1:
             previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
             most_order_car = self.get_max_order_car_index()
             farthest_order_index = self.find_farthest_order(most_order_car)
             nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
-            self.move_order(most_order_car, nearest_car, farthest_order_index)
+            if nearest_car != most_order_car:
+                self.move_order(most_order_car, nearest_car, farthest_order_index)
             avg_distance, all_distance = self.get_average_distance()
-            reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            current_volume = self.get_avg_volume()
+            # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1))
+            finish_cars = self.get_finish_cars()
+            if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars
+            else:
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars - 100
         else:
-            reward = -1000
+            reward = -10000
         return reward
 
     def move_nearest_order_of_least_order_car(self):
@@ -375,36 +410,53 @@ class Simulator:
         # if not is_full:
         if len(self.cars) > 1:
             previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
             least_order_car = self.get_min_order_car_index()
             nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[least_order_car].centroid['lat'], self.cars[least_order_car].centroid['lon'], least_order_car)
-            self.move_order(nearest_car, least_order_car, nearest_order)
+            if nearest_car != least_order_car:
+                self.move_order(nearest_car, least_order_car, nearest_order)
             avg_distance, all_distance = self.get_average_distance()
-            reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            current_volume = self.get_avg_volume()
+            # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1))
+            finish_cars = self.get_finish_cars()
+            if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+            else:
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
         else:
-            reward = -1000
+            reward = -10000
         return reward
 
-    def move_nearest_order_of_car_that_not_full_and_can_delivery(self):
+    def move_nearest_order_of_car_that_not_full_and_can_delivery(self): # not check delivery anymore
         # is_full_all_cars, is_excess = self.is_full_all_cars()
         # if not is_full_all_cars:
         if len(self.cars) > 1:
             previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
             min_order = 1000
             min_order_car_index = 0
             for i, car in enumerate(self.cars):
-                is_delivery, total_distance = self.is_delivery(i)
+                # is_delivery = self.is_delivery(i)
                 is_full = self.is_full(i)
-                if is_delivery and not is_full:
+                if not is_full:
                     number_of_order = len(car.orders)
                     if number_of_order < min_order:
                         min_order = number_of_order
                         min_order_car_index = i
             nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[min_order_car_index].centroid['lat'], self.cars[min_order_car_index].centroid['lon'], min_order_car_index)
-            self.move_order(nearest_car, min_order_car_index, nearest_order)
+            if nearest_car != min_order_car_index:
+                self.move_order(nearest_car, min_order_car_index, nearest_order)
             avg_distance, all_distance = self.get_average_distance()
-            reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            current_volume = self.get_avg_volume()
+            # reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1))
+            finish_cars = self.get_finish_cars()
+            if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+            else:
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
         else:
-            reward = -1000
+            reward = -10000
         return reward
 
     def move_most_distance_to_nearest(self):
@@ -412,6 +464,7 @@ class Simulator:
         # if not is_full:
         if len(self.cars) > 1:
             previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
             max_distance, car_index_max = 0, 0
             for i, car in enumerate(self.cars):
                 distance = car.distance
@@ -420,101 +473,92 @@ class Simulator:
                     max_distance = distance
             farthest_order = self.find_farthest_order(car_index_max)
             nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[car_index_max].centroid['lat'], self.cars[car_index_max].centroid['lon'], car_index_max)
-            self.move_order(car_index_max, nearest_car, farthest_order)
+            if nearest_car != car_index_max:
+                self.move_order(car_index_max, nearest_car, farthest_order)
             avg_distance, all_distance = self.get_average_distance()
-            reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            current_volume = self.get_avg_volume()
+            # reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1))
+            finish_cars = self.get_finish_cars()
+            if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+            else:
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
         else:
-            reward = -1000
+            reward = -10000
+        return reward
+
+    def move_from_full_car_and_can_not_delivery_to_nearest_car(self):
+        if len(self.cars) > 1:
+            previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
+            most_orders = 0
+            most_orders_car = 0
+            for i, car in enumerate(self.cars):
+                is_full = self.is_full(i)
+                is_delivery = self.is_delivery(i)
+                if is_full and not is_delivery:
+                    number_of_orders = len(self.cars[i].orders)
+                    if number_of_orders > most_orders:
+                        most_orders = number_of_orders
+                        most_orders_car = i
+            farthest_order = self.find_farthest_order(most_orders_car)
+            nearest_car, nearest_orders = self.find_nearest_car_and_order(self.cars[most_orders_car].orders[farthest_order].coordinate['lat'], self.cars[most_orders_car].orders[farthest_order].coordinate['lon'], most_orders_car)
+            if nearest_car != most_orders_car:
+                self.move_order(most_orders_car, nearest_car, farthest_order)
+            avg_distance, all_distance = self.get_average_distance()
+            current_volume = self.get_avg_volume()
+            # reward = ((previous_avg_distance - avg_distance) * 2) + ((previous_all_distance - all_distance)* 2)
+            # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1))
+            finish_cars = self.get_finish_cars()
+            if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+            else:
+                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
+        else:
+            reward = -10000
         return reward
 
     def delete_car(self):
         # is_full, is_excess = self.is_full_all_cars()
         # if not is_full:
         if len(self.cars) > 1:
+            previous_avg_distance, previous_all_distance = self.get_average_distance()
+            previous_avg_volume = self.get_avg_volume()
             average_distance, all_distance= self.get_average_distance()
             car_index = self.get_min_order_car_index()
+            min_order = 1000
+            for i, car in enumerate(self.cars):
+                orders_number = len(car.orders)
+                if not self.is_delivery(i):
+                    if orders_number < min_order:
+                        min_order = orders_number
+                        car_index = i
             if len(self.cars[car_index].orders) > 0:
                 for i, order in enumerate(self.cars[car_index].orders):
                     nearest_car, nearest_order = self.find_nearest_car_and_order(order.coordinate['lat'], order.coordinate['lon'], car_index)
-                    self.cars[nearest_car].orders.append(order)
+                    if nearest_car != car_index:
+                        self.cars[nearest_car].orders.append(order)
             self.cars.pop(car_index)
-            self.set_distance_and_centroid_all_cars()
-            reward = average_distance
+            self.set_distance_and_centroid_and_volume_all_cars()
+            is_full = self.is_full_all_cars()
+            is_delivery = self.is_delivery_all_car()
+            # avg_distance, all_distance = self.get_average_distance()
+            current_volume = self.get_avg_volume()
+            if is_full != '2':
+                finish_cars = self.get_finish_cars()
+                if is_delivery == '2':
+                    # reward = - ((all_distance - previous_all_distance) * (cant_delivery_car + excess_cars + 1)) + 500
+                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) + 50
+                else:
+                    # reward = - ((all_distance - previous_all_distance) + () * (cant_delivery_car + excess_cars + 1)) + 100
+                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) + 10
+                # reward = ((previous_all_distance - all_distance) * (self.can_delivery_cars + self.not_excess_cars + 1)) * (1 / len(self.cars)) + 100
+            else:
+                reward = -10000
         else:
             reward = -10000
         return reward
-
-
-
-    # Old Action
-    # def move_most_orders_to_least_orders(self):
-    #     is_full, is_excess = self.is_full_all_cars()
-    #     if not is_full:
-    #         previous_distance = self.get_average_distance()
-    #         car_index_max, car_index_min = self.get_max_min_car_index()
-    #
-    #         farthest_order = self.find_farthest_order(self.cars[car_index_max].orders)
-    #         self.move_order(car_index_max, car_index_min, farthest_order)
-    #         reward = previous_distance - self.get_average_distance()
-    #     else:
-    #         reward = -1000
-    #     return reward
-    #
-    # def move_most_total_distance_to_least_total_distance(self):
-    #     is_full, is_excess = self.is_full_all_cars()
-    #     if not is_full:
-    #         previous_distance = self.get_average_distance()
-    #         max_distance, car_index_max, car_index_min = 0, 0, 0
-    #         min_distance = 10000
-    #         for i, car in enumerate(self.cars):
-    #             # best_distance = two_opt(car.orders, 0.1)
-    #             best_distance = car.distance
-    #             if best_distance > max_distance:
-    #                 car_index_max = i
-    #                 max_distance = best_distance
-    #
-    #             if best_distance < min_distance:
-    #                 car_index_min = i
-    #                 min_distance = best_distance
-    #
-    #         farthest_order = self.find_farthest_order(self.cars[car_index_max].orders)
-    #         self.move_order(car_index_max, car_index_min, farthest_order)
-    #         reward = previous_distance - self.get_average_distance()
-    #     else:
-    #         reward = -1000
-    #     return reward
-    #
-    # def move_farthest_to_nearest_car(self):
-    #     is_full, is_excess = self.is_full_all_cars()
-    #     if not is_full:
-    #         previous_distance = self.get_average_distance()
-    #         car_index, x = self.get_max_min_car_index()
-    #         farthest_order_index = self.find_farthest_order(self.cars[car_index].orders)
-    #         farthest_order = self.cars[car_index].orders[farthest_order_index]
-    #         min_distance = 100000
-    #         min_distance_order_index, min_distance_car_index = 0, 0
-    #         for i, car in enumerate(self.cars):
-    #             if i != car_index:
-    #                 for j, order in enumerate(car.orders):
-    #                     distance = compute_distance(farthest_order.coordinate['lat'],
-    #                                                      farthest_order.coordinate['lon'], order.coordinate['lat'],
-    #                                                      order.coordinate['lon'])
-    #                     # print('distance : ', distance, 'min distance : ', min_distance)
-    #                     if distance < min_distance:
-    #                         min_distance_car_index = i
-    #                         min_distance = distance
-    #         self.move_order(car_index, min_distance_car_index, farthest_order_index)
-    #         reward = previous_distance - self.get_average_distance()
-    #     else:
-    #         reward = -1000
-    #     return reward
-    # def swapTwoNearestOrder(self):
-    #     for i in self.cars:
-    #         for j in self.cars:
-    #             for order in i.orders:
-    #                 distance = self.computeDistance(order.coordinate['lat'], farthest_order.coordinate['lon'], order.coordinate['lat'], order.coordinate['lon'])
-    #     return 3
-
 
 class QLearning:
     def __init__(self, learning_rate=0.1):
@@ -525,41 +569,47 @@ class QLearning:
 
         self.all_epochs = []
         self.all_penalties = []
-        self.q_table = np.zeros((21, 6))
+        self.q_table = np.zeros((9, 7))
         car = Car()
         for i in range(ALL_ORDERS):
             car.add_order(Order())
-        car.set_centroid()
         self.env = Simulator(init_car=[car])
 
-    def save_model(self):
-        np.save(open('qtable.np', 'wb'), self.q_table)
+    def save_model(self, file_name):
+        np.save(open(file_name, 'wb'), self.q_table)
 
     def load_model(self):
-        self.q_table = np.load(open('qtable.np', 'rb'))
+        self.q_table = np.load(open('file_name', 'rb'))
 
     def training(self):
-        for i in range(1, 100000):
+        for i in range(1, 1000):
             self.env.reset()
+            self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
 
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
+            file_name = 'qtable0.np'
             while not done:
                 if random.uniform(0, 1) < self.epsilon:
-                    action = random.randint(0, 5)
+                    action = random.randint(0, 6)
                 else:
                     action = np.argmax(self.q_table[state])  # Exploit learned values
 
-                print(f'Current Action : {action} state : {state}')
+                # print(f'Current Action : {action} state : {state}')
                 # print(f'Q table {self.q_table}')
-                print('Q table')
-                print(self.q_table)
+                print(f'State : {state} action : {action}')
 
                 reward, next_state = self.env.take_action(action)
 
+                print(f'Reward {reward}')
                 print(f'Next State {next_state}')
+
+                print('number of cars: ', len(self.env.cars))
+                # print('not full : ', self.env.not_full_cars)
+                print('not_excess : ', self.env.not_excess_cars)
+                print('is_delivery : ', self.env.can_delivery_cars)
 
                 old_value = self.q_table[state, action]
                 next_max = np.max(self.q_table[next_state])
@@ -567,15 +617,24 @@ class QLearning:
                 new_value = (1 - self.alpha) * old_value + self.alpha * (reward + self.gamma * next_max)
                 self.q_table[state, action] = new_value
 
-                self.save_model()
+                self.save_model(file_name)
+                print('Q table')
+                print(self.q_table)
+                print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 
-                if reward == -10:
-                    penalties += 1
+                # if reward == -10:
+                #     penalties += 1
 
                 state = next_state
                 epochs += 1
 
-                if state == 7 or state == 16 or state == 20:
+                if state == 8:
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    winsound.Beep(frequency, duration)
+                    file_name = 'qtable' + str(i) + '.np'
                     done = True
 
             self.epsilon = self.epsilon - 0.01
@@ -586,6 +645,7 @@ class QLearning:
             if i % 100 == 0:
                 clear_output(wait=True)
                 print(f"Episode: {i}")
+                # print(self.q_table)
 
         print("Training finished.\n")
         print(f'Q table {self.q_table}')
