@@ -5,6 +5,7 @@ class Car:
         # self.carIndex = carIndex
         self.orders = []
         self.distance = 0
+        self.route = []
         self.centroid = {
             'lat': 0,
             'lon': 0
@@ -20,7 +21,7 @@ class Car:
         self.orders.pop(order_index)
 
     def set_distance(self):
-        self.distance = two_opt(self.orders, 0.1)
+        self.distance, self.route = two_opt(self.orders, 0.1)
 
     def set_centroid(self):
         number_of_orders = len(self.orders)

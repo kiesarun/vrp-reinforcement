@@ -300,7 +300,7 @@ class Simulator:
             current_volume = self.get_avg_volume()
             if is_full_state == '2' or is_delivery != '2':
                 finish_cars = self.get_finish_cars()
-                reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars - 50
+                reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 50
             else:
                 reward = -10000
             return reward
@@ -327,9 +327,9 @@ class Simulator:
                 current_volume = self.get_avg_volume()
                 finish_cars = self.get_finish_cars()
                 if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1))
                 else:
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * finish_cars - 100
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 100
             else:
                 reward = -10000
             return reward
@@ -355,9 +355,9 @@ class Simulator:
                 current_volume = self.get_avg_volume()
                 finish_cars = self.get_finish_cars()
                 if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1))
                 else:
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 100
             else:
                 reward = -10000
             return reward
@@ -390,9 +390,9 @@ class Simulator:
                 current_volume = self.get_avg_volume()
                 finish_cars = self.get_finish_cars()
                 if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1))
                 else:
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 100
             else:
                 reward = -10000
             return reward
@@ -431,9 +431,9 @@ class Simulator:
                 current_volume = self.get_avg_volume()
                 finish_cars = self.get_finish_cars()
                 if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1))
                 else:
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 100
             else:
                 reward = -10000
             return reward
@@ -486,9 +486,9 @@ class Simulator:
                 current_volume = self.get_avg_volume()
                 finish_cars = self.get_finish_cars()
                 if not self.is_full(nearest_car) and self.is_delivery(nearest_car):
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1)
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1))
                 else:
-                    reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) - 100
+                    reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) - 100
             else:
                 reward = -10000
             return reward
@@ -549,9 +549,9 @@ class Simulator:
                 if is_full != '2':
                     finish_cars = self.get_finish_cars()
                     if is_delivery == '2':
-                        reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) + 50
+                        reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) + 50
                     else:
-                        reward = (((previous_all_distance - all_distance) * (self.can_delivery_cars + 1)) + ((previous_avg_volume - current_volume) * (self.not_excess_cars + 1))) * (finish_cars + 1) + 10
+                        reward = (((previous_all_distance - all_distance) + (previous_avg_volume - current_volume)) * (finish_cars + 1)) + 10
                 else:
                     reward = -10000
             else:

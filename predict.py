@@ -31,6 +31,21 @@ def print_result(agent):
         print('distance : \t', car.distance)
 
 
+def predict(orders):
+    agent = QLearning(False, orders)
+    agent.env.reset()
+    model_predict(agent)
+
+    for i, car in enumerate(agent.env.cars):
+        for j in range(len(car.route)):
+            delivery_index = car.route[j]
+            for k, order in enumerate(car.orders):
+                if k == delivery_index:
+                    order.deliveryOrder = delivery_index
+
+    return agent.env.cars
+
+
 if __name__ == "__main__":
     agent = QLearning(False)
     agent.env.reset()

@@ -52,7 +52,6 @@ def travelSalesMan(orders):
     if len(orders) == 0:
         best_state, best_fitness = [0], 0
     else:
-
         # Create list of city coordinates
         # coords_list = [(1, 1), (4, 2), (5, 2), (6, 4), (4, 4), (3, 6), (1, 5), (2, 3)]
         coordinates = []
@@ -60,32 +59,32 @@ def travelSalesMan(orders):
             coordinates.append((order.coordinate['lat'], order.coordinate['lon']))
         number_of_orders = len(coordinates)
 
-        dist_list = []
-        for i, order1 in enumerate(orders):
-            for j, order2 in enumerate(orders):
-                if i < j:
-                    dist_list.append((i, j, computeDistance(order1.coordinate['lat'], order1.coordinate['lon'],
-                                                            order2.coordinate['lat'], order2.coordinate['lon'])))
+        # dist_list = []
+        # for i, order1 in enumerate(orders):
+        #     for j, order2 in enumerate(orders):
+        #         if i < j:
+        #             dist_list.append((i, j, computeDistance(order1.coordinate['lat'], order1.coordinate['lon'],
+        #                                                     order2.coordinate['lat'], order2.coordinate['lon'])))
 
         # Initialize fitness function object using coords_list
         # fitness_coords = mlrose.TravellingSales(distances=dist_list)
 
         # Create list of distances between pairs of cities
-        # dist_list = [(0, 1, 3.1623), (0, 2, 4.1231), (0, 3, 5.8310), (0, 4, 4.2426),
-        #              (0, 5, 5.3852), (0, 6, 4.0000), (0, 7, 2.2361), (1, 2, 1.0000),
-        #              (1, 3, 2.8284), (1, 4, 2.0000), (1, 5, 4.1231), (1, 6, 4.2426),
-        #              (1, 7, 2.2361), (2, 3, 2.2361), (2, 4, 2.2361), (2, 5, 4.4721),
-        #              (2, 6, 5.0000), (2, 7, 3.1623), (3, 4, 2.0000), (3, 5, 3.6056),
-        #              (3, 6, 5.0990), (3, 7, 4.1231), (4, 5, 2.2361), (4, 6, 3.1623),
-        #              (4, 7, 2.2361), (5, 6, 2.2361), (5, 7, 3.1623), (6, 7, 2.2361)]
+        dist_list = [(0, 1, 3.1623), (0, 2, 4.1231), (0, 3, 5.8310), (0, 4, 4.2426),
+                     (0, 5, 5.3852), (0, 6, 4.0000), (0, 7, 2.2361), (1, 2, 1.0000),
+                     (1, 3, 2.8284), (1, 4, 2.0000), (1, 5, 4.1231), (1, 6, 4.2426),
+                     (1, 7, 2.2361), (2, 3, 2.2361), (2, 4, 2.2361), (2, 5, 4.4721),
+                     (2, 6, 5.0000), (2, 7, 3.1623), (3, 4, 2.0000), (3, 5, 3.6056),
+                     (3, 6, 5.0990), (3, 7, 4.1231), (4, 5, 2.2361), (4, 6, 3.1623),
+                     (4, 7, 2.2361), (5, 6, 2.2361), (5, 7, 3.1623), (6, 7, 2.2361)]
 
         # print(dist_list)
         # Initialize fitness function object using dist_list
-        fitness_dists = mlrose.TravellingSales(distances=dist_list)
-        # fitness_coords = mlrose.TravellingSales(coords=coordinates)
+        # fitness_dists = mlrose.TravellingSales(distances=dist_list)
+        fitness_coords = mlrose.TravellingSales(coords=coordinates)
 
-        problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_dists, maximize=False)
-        # problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_coords, maximize=False)
+        # problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_dists, maximize=False)
+        problem_fit = mlrose.TSPOpt(length=number_of_orders, fitness_fn=fitness_coords, maximize=False)
 
         # coords_list = [(1, 1), (4, 2), (5, 2), (6, 4), (4, 4), (3, 6),
         #            (1, 5), (2, 3)]
@@ -149,4 +148,5 @@ def two_opt(orders, improvement_threshold):  # 2-opt Algorithm adapted from http
                     route = new_route
                     best_distance = new_distance
         improvement_factor = 1 - best_distance / distance_to_beat
-    return best_distance
+    # print(route)
+    return best_distance, route

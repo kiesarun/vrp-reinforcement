@@ -4,7 +4,7 @@ import winsound
 from IPython.display import clear_output
 from orders import Order
 from car import Car
-from simulator import Simulator
+from simulatorEVA import Simulator
 
 ALL_ORDERS = 300
 
@@ -13,7 +13,7 @@ duration = 3000  # Set Duration To 1000 ms == 1 second
 
 
 class QLearning:
-    def __init__(self, learning_rate=0.1, is_train=True, orders=None):
+    def __init__(self, learning_rate=0.1, is_train = True):
         self.alpha = learning_rate
         self.gamma = 0.89
         self.epsilon = 0.5
@@ -23,13 +23,8 @@ class QLearning:
         self.all_penalties = []
         self.q_table = np.zeros((9, 7))
         car = Car()
-        if orders is None:
-            for i in range(ALL_ORDERS):
-                car.add_order(Order())
-        else:
-            for order in orders:
-                car.add_order(Order(order))
-
+        for i in range(ALL_ORDERS):
+            car.add_order(Order())
         self.env = Simulator(init_car=[car], is_train=is_train)
 
     def save_model(self, file_name):
@@ -39,7 +34,7 @@ class QLearning:
         self.q_table = np.load(open(file_name, 'rb'))
 
     def training(self):
-        for i in range(1, 100):
+        for i in range(1, 10):
             self.env.reset()
             self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
@@ -47,7 +42,7 @@ class QLearning:
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
-            file_name = 'qtable.np'
+            file_name = 'qtableEVA_10.np'
             while not done:
                 if random.uniform(0, 1) < self.epsilon:
                     action = random.randint(0, 6)
@@ -91,7 +86,7 @@ class QLearning:
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     winsound.Beep(frequency, duration)
-                    # file_name = 'qtable__' + str(i) + '.np'
+                    # file_name = 'qtableEVA__' + str(i) + '.np'
                     done = True
 
             self.epsilon = self.epsilon - 0.01
@@ -118,10 +113,10 @@ class QLearning:
 if __name__ == "__main__":
     agent = QLearning()
     # agent.load_model()
-    # agent.training()
+    agent.training()
 
     # car = Car()
-    # for i in range(30):
+    # for i in range(ALL_ORDERS):
     #     car.add_order(Order())
     # car.set_centroid()
     # s = Simulator(init_car=[car])
