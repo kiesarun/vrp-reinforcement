@@ -35,14 +35,21 @@ def path():
                 cars.append(car_orders)
             print('prepared')
 
-            route = []
+            routes = []
             for car_orders in cars:
                 finish_distance, finish_route = two_opt(car_orders, 0.1)
-                route.append(finish_route)
+                routes.append(finish_route)
 
             for i, car_orders in enumerate(cars):
-                for j, order in enumerate(car_orders):
-                    order.deliveryOrder = route[i][j]
+                for j in range(len(routes[i])):
+                    for k in range(len(car_orders)):
+                        if routes[i][j] == k:
+                            car_orders[k].deliveryOrder = j
+
+                # for j, order in enumerate(car_orders):
+                #     for
+                #     order.deliveryOrder = route[i][j]
+                    # print(route[i][j])
 
         elif data['solution'] == 'qlearning':
             cars = predict(orders)
