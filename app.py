@@ -1,13 +1,14 @@
 from dotenv import load_dotenv
 
 load_dotenv()
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 from connectDB import connectOrdersDB
 from clusterByKmean import clusterByKmean
 from predict import predict
 from travellingSales import two_opt
 from orders import Order
 from prepareData import prepareData
+
 app = Flask(__name__)
 
 
@@ -36,9 +37,11 @@ def path():
             print('prepared')
 
             routes = []
+            distance = []
             for car_orders in cars:
                 finish_distance, finish_route = two_opt(car_orders, 0.1)
                 routes.append(finish_route)
+                distance.append(finish_distance)
 
             for i, car_orders in enumerate(cars):
                 for j in range(len(routes[i])):
@@ -46,22 +49,19 @@ def path():
                         if routes[i][j] == k:
                             car_orders[k].deliveryOrder = j
 
-                # for j, order in enumerate(car_orders):
-                #     for
-                #     order.deliveryOrder = route[i][j]
-                    # print(route[i][j])
-
-        elif data['solution'] == 'qlearning':
+        if data['solution'] == 'qlearning':
             cars = predict(orders)
+            print(cars)
 
         db = connectOrdersDB()
-        # for i in range(len(completed_data)):
         for car_orders in cars:
             for order in car_orders:
                 db['orders'].update_one({"_id": order.id}, {"$set": {"carNumber": int(order.carNumber)}})
                 db['orders'].update_one({"_id": order.id}, {"$set": {"deliveryOrder": int(order.deliveryOrder)}})
 
-        return 'success'
+        return jsonify({
+            "finish_distance": distance
+        })
 
     except Exception as e:
         print(e)

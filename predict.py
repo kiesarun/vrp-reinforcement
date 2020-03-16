@@ -41,7 +41,7 @@ def predict(orders):
             delivery_index = car.route[j]
             for k, order in enumerate(car.orders):
                 if k == delivery_index:
-                    order.deliveryOrder = delivery_index
+                    order.deliveryOrder = j
 
     return agent.env.cars
 
