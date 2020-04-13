@@ -4,7 +4,7 @@ import random
 # from IPython.display import clear_output
 from orders import Order
 from car import Car
-from simulatorRATE import Simulator
+from simulator_volume_std import Simulator
 
 ALL_ORDERS = 300
 
@@ -13,7 +13,7 @@ duration = 3000  # Set Duration To 1000 ms == 1 second
 
 
 class QLearning:
-    def __init__(self, learning_rate=0.1, is_train = True):
+    def __init__(self, learning_rate=0.1, is_train=True, orders=None):
         self.alpha = learning_rate
         self.gamma = 0.89
         self.epsilon = 0.5
@@ -21,10 +21,15 @@ class QLearning:
 
         self.all_epochs = []
         self.all_penalties = []
-        self.q_table = np.zeros((9, 7))
+        self.q_table = np.zeros((18, 8))
         car = Car()
-        for i in range(ALL_ORDERS):
-            car.add_order(Order())
+        if orders is None:
+            for i in range(ALL_ORDERS):
+                car.add_order(Order())
+        else:
+            for order in orders:
+                car.add_order(Order(order))
+
         self.env = Simulator(init_car=[car], is_train=is_train)
 
     def save_model(self, file_name):
@@ -34,7 +39,7 @@ class QLearning:
         self.q_table = np.load(open(file_name, 'rb'))
 
     def training(self):
-        for i in range(1, 10):
+        for i in range(1, 100):
             self.env.reset()
             self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
@@ -42,10 +47,10 @@ class QLearning:
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
-            file_name = 'qtableRATE_10.np'
+            file_name = 'q-table_volume_std.np'
             while not done:
                 if random.uniform(0, 1) < self.epsilon:
-                    action = random.randint(0, 6)
+                    action = random.randint(0, 7)
                 else:
                     action = np.argmax(self.q_table[state])  # Exploit learned values
 
@@ -59,8 +64,7 @@ class QLearning:
                 print(f'Next State {next_state}')
 
                 print('number of cars: ', len(self.env.cars))
-                # print('not full : ', self.env.not_full_cars)
-                print('not_excess : ', self.env.not_excess_cars)
+                print('not full : ', self.env.not_excess_cars)
                 print('is_delivery : ', self.env.can_delivery_cars)
 
                 old_value = self.q_table[state, action]
@@ -80,13 +84,25 @@ class QLearning:
                 state = next_state
                 epochs += 1
 
-                if state == 8:
+                if state == 17:
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     # winsound.Beep(frequency, duration)
-                    # file_name = 'qtableEVA__' + str(i) + '.np'
+                    file = open('Goal_volume_std.txt', 'a')
+                    file.write('\nGoal_' + str(i) + '\n')
+                    file.write(str(self.q_table))
+                    file.write('standard deviation: ' + str(self.env.std_volume))
+                    file.write('\n\n')
+                    for j, car in enumerate(self.env.cars):
+                        file.write('car_' + str(j) + '\tvolume: ' + str(car.volume) + '\tdistance: ' + str(car.distance) + '\n')
+                    file.write('###################################################################')
+                    file.close()
                     done = True
 
             self.epsilon = self.epsilon - 0.01
@@ -112,13 +128,8 @@ class QLearning:
 
 if __name__ == "__main__":
     agent = QLearning()
-    # agent.load_model()
+    agent.load_model('q-table_volume_std.np')
     agent.training()
 
-    # car = Car()
-    # for i in range(ALL_ORDERS):
-    #     car.add_order(Order())
-    # car.set_centroid()
-    # s = Simulator(init_car=[car])
 
 

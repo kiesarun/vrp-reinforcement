@@ -4,7 +4,7 @@ import numpy as np
 random.seed(5555)
 np.random.seed(5555)
 
-from qLearning import QLearning
+from q_learning_number_of_cars import QLearning
 import time
 
 

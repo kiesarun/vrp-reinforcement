@@ -19,6 +19,7 @@ class Order:
             self.height = random.uniform(2, 100)
             self.length = random.uniform(15, 100)
         else:
+            print(order)
             self.id = order['_id']
             self.coordinate = {
                 'lat': order['coordinates']['lat'],
@@ -27,6 +28,7 @@ class Order:
             self.width = order['width']
             self.height = order['height']
             self.length = order['length']
+        self.volume = self.width * self.height * self.length
         self.carNumber = 0
         self.deliveryOrder = 0
 

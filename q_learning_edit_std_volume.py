@@ -4,16 +4,18 @@ import random
 # from IPython.display import clear_output
 from orders import Order
 from car import Car
-from simulator import Simulator
+from simulator_number_of_cars_edit_goal_state import Simulator
 
 ALL_ORDERS = 300
 
 frequency = 2500  # Set Frequency To 2500 Hertz
 duration = 3000  # Set Duration To 1000 ms == 1 second
 
+VOLUME_STD = 1
+
 
 class QLearning:
-    def __init__(self, learning_rate=0.1, is_train = True):
+    def __init__(self, learning_rate=0.1, is_train=True, orders=None):
         self.alpha = learning_rate
         self.gamma = 0.89
         self.epsilon = 0.5
@@ -23,8 +25,13 @@ class QLearning:
         self.all_penalties = []
         self.q_table = np.zeros((9, 7))
         car = Car()
-        for i in range(ALL_ORDERS):
-            car.add_order(Order())
+        if orders is None:
+            for i in range(ALL_ORDERS):
+                car.add_order(Order())
+        else:
+            for order in orders:
+                car.add_order(Order(order))
+
         self.env = Simulator(init_car=[car], is_train=is_train)
 
     def save_model(self, file_name):
@@ -34,7 +41,7 @@ class QLearning:
         self.q_table = np.load(open(file_name, 'rb'))
 
     def training(self):
-        for i in range(1, 100):
+        for i in range(1, 200):
             self.env.reset()
             self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
@@ -42,7 +49,7 @@ class QLearning:
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
-            file_name = 'qtable_cumulative.np'
+            file_name = 'q-table_edit_std_volume.np'
             while not done:
                 if random.uniform(0, 1) < self.epsilon:
                     action = random.randint(0, 6)
@@ -59,8 +66,7 @@ class QLearning:
                 print(f'Next State {next_state}')
 
                 print('number of cars: ', len(self.env.cars))
-                # print('not full : ', self.env.not_full_cars)
-                print('not_excess : ', self.env.not_excess_cars)
+                print('not full : ', self.env.not_excess_cars)
                 print('is_delivery : ', self.env.can_delivery_cars)
 
                 old_value = self.q_table[state, action]
@@ -81,12 +87,18 @@ class QLearning:
                 epochs += 1
 
                 if state == 8:
-                    print('GOAL!!!!!!!!!!!!!!')
-                    print('GOAL!!!!!!!!!!!!!!')
-                    print('GOAL!!!!!!!!!!!!!!')
-                    print('GOAL!!!!!!!!!!!!!!')
-                    # winsound.Beep(frequency, duration)
-                    done = True
+                    if self.env.std_volume < VOLUME_STD:
+                        print('GOAL!!!!!!!!!!!!!!')
+                        file = open('Goal_edit_std_volume.txt', 'a')
+                        file.write('\nGoal_' + str(i) + '\n')
+                        file.write('standard volume: ', self.env.std_volume)
+                        file.write(str(self.q_table))
+                        file.write('\n\n')
+                        for j, car in enumerate(self.env.cars):
+                            file.write('car_' + str(j) + '\tvolume: ' + str(car.volume) + '\tdistance: ' + str(car.distance) + '\n')
+                        file.write('###################################################################')
+                        file.close()
+                        done = True
 
             self.epsilon = self.epsilon - 0.01
 
@@ -111,13 +123,7 @@ class QLearning:
 
 if __name__ == "__main__":
     agent = QLearning()
-    # agent.load_model()
     agent.training()
 
-    # car = Car()
-    # for i in range(ALL_ORDERS):
-    #     car.add_order(Order())
-    # car.set_centroid()
-    # s = Simulator(init_car=[car])
 
 

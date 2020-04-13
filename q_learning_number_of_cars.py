@@ -1,10 +1,8 @@
 import numpy as np
 import random
-import winsound
-from IPython.display import clear_output
 from orders import Order
 from car import Car
-from simulatorEVA import Simulator
+from simulator_number_of_cars import Simulator
 
 ALL_ORDERS = 300
 
@@ -13,7 +11,7 @@ duration = 3000  # Set Duration To 1000 ms == 1 second
 
 
 class QLearning:
-    def __init__(self, learning_rate=0.1, is_train = True):
+    def __init__(self, is_train=True, orders=None, learning_rate=0.1):
         self.alpha = learning_rate
         self.gamma = 0.89
         self.epsilon = 0.5
@@ -23,8 +21,13 @@ class QLearning:
         self.all_penalties = []
         self.q_table = np.zeros((9, 7))
         car = Car()
-        for i in range(ALL_ORDERS):
-            car.add_order(Order())
+        if orders is None:
+            for i in range(ALL_ORDERS):
+                car.add_order(Order())
+        else:
+            for order in orders:
+                car.add_order(Order(order))
+
         self.env = Simulator(init_car=[car], is_train=is_train)
 
     def save_model(self, file_name):
@@ -34,7 +37,7 @@ class QLearning:
         self.q_table = np.load(open(file_name, 'rb'))
 
     def training(self):
-        for i in range(1, 10):
+        for i in range(1, 100):
             self.env.reset()
             self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
@@ -42,8 +45,9 @@ class QLearning:
             epochs, penalties, reward, = 0, 0, 0
             done = False
 
-            file_name = 'qtableEVA_10.np'
+            file_name = 'q-table_number_of_cars.np'
             while not done:
+                file = open('Goal_number_of_cars.txt', 'a')
                 if random.uniform(0, 1) < self.epsilon:
                     action = random.randint(0, 6)
                 else:
@@ -59,8 +63,7 @@ class QLearning:
                 print(f'Next State {next_state}')
 
                 print('number of cars: ', len(self.env.cars))
-                # print('not full : ', self.env.not_full_cars)
-                print('not_excess : ', self.env.not_excess_cars)
+                print('not full : ', self.env.not_full_cars)
                 print('is_delivery : ', self.env.can_delivery_cars)
 
                 old_value = self.q_table[state, action]
@@ -85,8 +88,18 @@ class QLearning:
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
                     print('GOAL!!!!!!!!!!!!!!')
-                    winsound.Beep(frequency, duration)
-                    # file_name = 'qtableEVA__' + str(i) + '.np'
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    print('GOAL!!!!!!!!!!!!!!')
+                    # winsound.Beep(frequency, duration)
+                    file.write('\nGoal_' + str(i) + '\n')
+                    file.write(str(self.q_table))
+                    file.write('\n\n')
+                    for j, car in enumerate(self.env.cars):
+                        file.write('car_' + str(j) + '\tvolume: ' + str(car.volume) + '\tdistance: ' + str(car.distance) + '\n')
+                    file.write('###################################################################')
+                    file.close()
                     done = True
 
             self.epsilon = self.epsilon - 0.01
@@ -95,30 +108,30 @@ class QLearning:
                 self.epsilon = 0.2
 
             if i % 100 == 0:
-                clear_output(wait=True)
+                # clear_output(wait=True)
                 print(f"Episode: {i}")
                 # print(self.q_table)
 
         print("Training finished.\n")
         print(f'Q table {self.q_table}')
 
-    def predict(self, state):
-        state = self.env.get_state()
-        done = False
-
-        action = np.argmax(self.q_table[state])  # Exploit learned values
-        return action
+    # def predict(self, state):
+    #     history_number = len(self.env.move_history)
+    #
+    #     if history_number >= 6:
+    #         start = history_number - 6
+    #         end = history_number
+    #         for i in range(start, end):
+    #             print('history : ', self.env.move_history[i])
+    #         print('-------------------------------------------------------------------')
+    #
+    #     # action = np.argmax(self.q_table[state])  # Exploit learned values
+    #     return action
 
 
 if __name__ == "__main__":
     agent = QLearning()
-    # agent.load_model()
     agent.training()
 
-    # car = Car()
-    # for i in range(ALL_ORDERS):
-    #     car.add_order(Order())
-    # car.set_centroid()
-    # s = Simulator(init_car=[car])
 
 

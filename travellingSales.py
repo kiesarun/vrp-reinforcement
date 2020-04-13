@@ -125,8 +125,8 @@ def path_distance(routes, cities):
 two_opt_swap = lambda r, i, k: np.concatenate((r[0:i], r[k:-len(r) + i - 1:-1], r[k + 1:len(r)]))
 
 
-def two_opt(orders, improvement_threshold):  # 2-opt Algorithm adapted from https://en.wikipedia.org/wiki/2-opt
-    if len(orders) < 2:
+def two_opt(orders, improvement_threshold, solution='qlearning'):  # 2-opt Algorithm adapted from https://en.wikipedia.org/wiki/2-opt
+    if len(orders) <= 1:
         return 0
     cities = []
     for order in orders:
@@ -148,5 +148,7 @@ def two_opt(orders, improvement_threshold):  # 2-opt Algorithm adapted from http
                     route = new_route
                     best_distance = new_distance
         improvement_factor = 1 - best_distance / distance_to_beat
-    # print(route)
-    return best_distance, route
+    if solution == 'kmean':
+        return best_distance, route
+    else:
+        return best_distance
