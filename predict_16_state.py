@@ -1,8 +1,8 @@
 import random
 import numpy as np
 
-random.seed(5555)
-np.random.seed(5555)
+# random.seed(5555)
+# np.random.seed(5555)
 
 from q_learning_edit_std_volume_and_state import QLearning
 import time
@@ -18,6 +18,7 @@ def model_predict(agent):
     done = False
     state = agent.env.get_state()
     loop = 2
+    count = 0
     while not done:
         history_number = len(agent.env.move_history)
         if history_number >= 8:
@@ -25,7 +26,7 @@ def model_predict(agent):
             end = history_number
             if start + 7 < end:
                 if agent.env.move_history[start] == agent.env.move_history[start + 2] or agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
-                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] or agent.env.move_history[start + 5] == agent.env.move_history[start + 7]:
+                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] or agent.env.move_history[start + 3] == agent.env.move_history[start + 5]:
                         loop = loop + 1
                         print('loop ***********************************************', loop)
                         print(agent.q_table)
@@ -52,7 +53,12 @@ def model_predict(agent):
         next_state = agent.env.take_action(action)
         print('state : ', state, 'action : ', action, 'next state: ', next_state)
         print('-------------------------------------------------------------------')
+        if state == next_state:
+            count = count + 1
+        else:
+            count = 0
         state = next_state
+
 
         if state == 15:
             if agent.env.std_volume < VOLUME_STD:

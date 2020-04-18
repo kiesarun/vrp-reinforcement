@@ -5,7 +5,7 @@ from flask import Flask, Response, request, jsonify
 from connectDB import connectOrdersDB
 from waitress import serve
 from clusterByKmean import clusterByKmean
-from predict_16_state import predict
+from predict_last import predict
 from travellingSales import two_opt
 from bson.objectid import ObjectId
 from orders import Order
@@ -63,12 +63,18 @@ def path():
         distance = []
         volume = []
         cars = []
+        routes = []
         for car in result:
             distance.append(car.distance)
             volume.append(car.volume)
             cars.append(car.orders)
-            distance.append(car.distance)
-            volume.append(car.volume)
+            routes.append(car.route)
+
+        for i, car_orders in enumerate(cars):
+            for j in range(len(routes[i])):
+                for k in range(len(car_orders)):
+                    if routes[i][j] == k:
+                        car_orders[k].deliveryOrder = j
 
     db = connectOrdersDB()
 

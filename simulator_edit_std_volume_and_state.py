@@ -141,7 +141,7 @@ class Simulator:
         self.cars[car_index].volume = volume
 
     def set_distance_and_centroid_and_volume(self, car_index):
-        if len(self.cars[car_index].orders) < 150: #self.all_order / 1.8
+        if len(self.cars[car_index].orders) < 160: #self.all_order / 1.8
             self.cars[car_index].set_distance()
         else:
             self.cars[car_index].distance = 1000
@@ -155,7 +155,7 @@ class Simulator:
             self.cars[0].set_volume()
         else:
             for i, car in enumerate(self.cars):
-                if len(car.orders) > 150: #self.all_order / 1.8
+                if len(car.orders) > 160: #self.all_order / 1.8
                     car.distance = 1000
                 else:
                     car.set_distance()
@@ -679,14 +679,15 @@ class Simulator:
             return reward
         else:
             if len(self.cars) > 1:
-                car_index = self.get_min_volume_car_index()
-                min_order = 1000
-                for i, car in enumerate(self.cars):
-                    orders_number = len(car.orders)
-                    if not self.is_delivery(i):
-                        if orders_number < min_order:
-                            min_order = orders_number
-                            car_index = i
+                # car_index = self.get_min_volume_car_index()
+                # min_order = 1000
+                # for i, car in enumerate(self.cars):
+                #     orders_number = len(car.orders)
+                #     if not self.is_delivery(i):
+                #         if orders_number < min_order:
+                #             min_order = orders_number
+                #             car_index = i
+                car_index = self.get_max_volume_car_index()
                 if len(self.cars[car_index].orders) > 0:
                     for i, order in enumerate(self.cars[car_index].orders):
                         nearest_car, nearest_order = self.find_nearest_car_and_order(order.coordinate['lat'], order.coordinate['lon'], car_index)

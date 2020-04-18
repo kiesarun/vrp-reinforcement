@@ -4,7 +4,7 @@ import numpy as np
 random.seed(5555)
 np.random.seed(5555)
 
-from q_learning_number_of_cars_edit_goal_state import QLearning
+from q_learning_number_of_cars import QLearning
 import time
 
 VOLUME_STD = 2.3
@@ -12,7 +12,7 @@ VOLUME_STD = 2.3
 
 def model_predict(agent):
     start_time = time.time()
-    agent.load_model('q-table_number_of_cars_edit_goal_state_cumulative_2nd.np')
+    agent.load_model('q-table_number_of_cars_cumulative.np')
     print(agent.q_table)
     done = False
     state = agent.env.get_state()
