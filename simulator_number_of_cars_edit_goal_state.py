@@ -38,6 +38,8 @@ class Simulator:
         self.all_order = len(self.cars[0].orders)
         self.std_volume = 0
         self.is_train = is_train
+        self.move_history = []
+        self.sum_volume = 0
         self.ori_is_train = is_train
 
     def reset(self):
@@ -46,6 +48,7 @@ class Simulator:
         self.not_excess_cars = 0
         self.std_volume = 0
         self.all_order = len(self.cars[0].orders)
+        self.sum_volume = 0
         self.is_train = self.ori_is_train
         print('reset simulator')
 
@@ -85,6 +88,7 @@ class Simulator:
 
     def move_order(self, origin_car_index, destination_car_index, order_index):
         if len(self.cars[origin_car_index].orders) > 0:
+            self.move_history.append([origin_car_index, destination_car_index, self.cars[origin_car_index].orders[order_index]])
             origin_car_orders = self.cars[origin_car_index].orders
             destination_car_orders = self.cars[destination_car_index].orders
             selected_order = origin_car_orders.pop(order_index)
@@ -102,18 +106,27 @@ class Simulator:
                 max_orders = number_of_order
         return car_index
 
-    def get_min_order_car_index(self):
-        car_index = 0
-        min_orders = CAR_CAPACITY
+    def get_max_volume_car_index(self):
+        max_volume, car_index = 0, 0
         for i, car in enumerate(self.cars):
-            number_of_order = len(car.orders)
-            if number_of_order <= min_orders:
+            volume = car.volume
+            if volume > max_volume:
+                max_volume = volume
                 car_index = i
-                min_orders = number_of_order
+        return car_index
+
+    def get_min_volume_car_index(self):
+        car_index = 0
+        min_volume = 100000000
+        for i, car in enumerate(self.cars):
+            car_volume = car.volume
+            if car_volume < min_volume:
+                car_index = i
+                min_volume = car_volume
         return car_index
 
     def set_distance_and_centroid_and_volume(self, car_index):
-        if len(self.cars[car_index].orders) < self.all_order / 1.5:
+        if len(self.cars[car_index].orders) < 150: # self.all_order / 1.8
             self.cars[car_index].set_distance()
         else:
             self.cars[car_index].distance = 1000
@@ -127,12 +140,13 @@ class Simulator:
             self.cars[0].set_volume()
         else:
             for car in self.cars:
-                if len(car.orders) > self.all_order / 1.5:
+                if len(car.orders) > 150: # self.all_order / 1.8
                     car.distance = 1000
                 else:
                     car.set_distance()
                 car.set_centroid()
                 car.set_volume()
+        self.sum_volume = self.get_sum_volume()
 
     def get_min_volume_order(self):
         min_volume = CAR_VOLUME
@@ -153,6 +167,12 @@ class Simulator:
         for car in self.cars:
             volume = volume + car.volume
         return volume / len(self.cars)
+
+    def get_sum_volume(self):
+        sum_volume = 0
+        for car in self.cars:
+            sum_volume = sum_volume + car.volume
+        return sum_volume
 
     def is_full(self, car_index):
         car_volume = 0
@@ -313,7 +333,8 @@ class Simulator:
                 self.move_from_full_car_and_can_not_delivery_to_nearest_car()
             else:
                 self.delete_car()
-
+            new_state = self.get_state()
+            return new_state
     def get_reward(self, pre_delivery_cars, pre_not_full_cars):
         curr_delivery = self.can_delivery_cars
         curr_not_full = self.not_excess_cars
@@ -336,7 +357,7 @@ class Simulator:
             # do
             self.cars.append(Car())
             new_car = len(self.cars) - 1
-            most_order_car = self.get_max_order_car_index()
+            most_order_car = self.get_max_volume_car_index()
             farthest_order_index = self.find_farthest_order(most_order_car)
             self.move_order(most_order_car, new_car, farthest_order_index)
             #
@@ -354,7 +375,7 @@ class Simulator:
         else:
             self.cars.append(Car())
             new_car = len(self.cars) - 1
-            most_order_car = self.get_max_order_car_index()
+            most_order_car = self.get_max_volume_car_index()
             farthest_order_index = self.find_farthest_order(most_order_car)
             self.move_order(most_order_car, new_car, farthest_order_index)
 
@@ -364,7 +385,7 @@ class Simulator:
                 pre_delivery_cars = self.can_delivery_cars
                 pre_not_full_cars = self.not_excess_cars
 
-                most_order_car = self.get_max_order_car_index()
+                most_order_car = self.get_max_volume_car_index()
                 farthest_order_index = self.find_farthest_order(most_order_car)
                 nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
                 if nearest_car != most_order_car:
@@ -379,7 +400,7 @@ class Simulator:
             return reward
         else:
             if len(self.cars) > 1:
-                most_order_car = self.get_max_order_car_index()
+                most_order_car = self.get_max_volume_car_index()
                 farthest_order_index = self.find_farthest_order(most_order_car)
                 nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
                 if nearest_car != most_order_car:
@@ -394,7 +415,7 @@ class Simulator:
                 pre_delivery_cars = self.can_delivery_cars
                 pre_not_full_cars = self.not_excess_cars
 
-                least_order_car = self.get_min_order_car_index()
+                least_order_car = self.get_min_volume_car_index()
                 nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[least_order_car].centroid['lat'], self.cars[least_order_car].centroid['lon'], least_order_car)
                 if nearest_car != least_order_car:
                     self.move_order(nearest_car, least_order_car, nearest_order)
@@ -408,7 +429,7 @@ class Simulator:
             return reward
         else:
             if len(self.cars) > 1:
-                least_order_car = self.get_min_order_car_index()
+                least_order_car = self.get_min_volume_car_index()
                 nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[least_order_car].centroid['lat'], self.cars[least_order_car].centroid['lon'], least_order_car)
                 if nearest_car != least_order_car:
                     self.move_order(nearest_car, least_order_car, nearest_order)
@@ -563,7 +584,7 @@ class Simulator:
                 pre_delivery_cars = self.can_delivery_cars
                 pre_not_full_cars = self.not_excess_cars
 
-                car_index = self.get_min_order_car_index()
+                car_index = self.get_min_volume_car_index()
                 min_order = 1000
                 for i, car in enumerate(self.cars):
                     orders_number = len(car.orders)
@@ -593,7 +614,7 @@ class Simulator:
             return reward
         else:
             if len(self.cars) > 1:
-                car_index = self.get_min_order_car_index()
+                car_index = self.get_min_volume_car_index()
                 min_order = 1000
                 for i, car in enumerate(self.cars):
                     orders_number = len(car.orders)

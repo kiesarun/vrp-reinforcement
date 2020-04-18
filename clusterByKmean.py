@@ -51,7 +51,7 @@ def clusterByKmean(orders, n):
     # plt.xlabel('x')
     # plt.ylabel('y')
     # plt.show()
-    print('clustered')
+    # print('clustered')
     return orders
 
 

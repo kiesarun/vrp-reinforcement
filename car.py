@@ -17,16 +17,15 @@ class Car:
 
     def add_order(self, order):
         self.orders.append(order)
-        self.volume = self.volume + order.volume
-
 
     def take_out_order(self, order_index):
-        self.volume = self.volume - self.orders[order_index].volume
         order = self.orders.pop(order_index)
         return order
 
     def set_distance(self):
-        self.distance = two_opt(self.orders, 0.1)
+        finish_distance, finish_route = two_opt(orders=self.orders, improvement_threshold=0.1, solution='kmean')
+        self.distance = finish_distance
+        self.route = finish_route
 
     def set_centroid(self):
         number_of_orders = len(self.orders)
@@ -38,4 +37,10 @@ class Car:
         if number_of_orders > 0:
             self.centroid['lat'] = lat / number_of_orders
             self.centroid['lon'] = lon / number_of_orders
+
+    def set_volume(self):
+        volume = 0
+        for order in self.orders:
+            volume = volume + (order.width * order.height * order.length)
+        self.volume = volume
 

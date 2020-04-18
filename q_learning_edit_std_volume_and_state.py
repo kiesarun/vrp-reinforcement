@@ -26,11 +26,12 @@ class QLearning:
         self.q_table = np.zeros((16, 7))
         car = Car()
         if orders is None:
+            sum_volume = 0
             for i in range(ALL_ORDERS):
                 car.add_order(Order())
         else:
             for order in orders:
-                car.add_order(order)
+                car.add_order(Order(order))
 
         self.env = Simulator(init_car=[car], is_train=is_train)
 
@@ -43,7 +44,7 @@ class QLearning:
     def training(self):
         for i in range(1, 200):
             self.env.reset()
-            self.env.set_distance_and_centroid_all_cars()
+            self.env.set_distance_and_centroid_and_volume_all_cars()
             state = self.env.get_state()
 
             epochs, penalties, reward, = 0, 0, 0
@@ -68,6 +69,7 @@ class QLearning:
                 print('number of cars: ', len(self.env.cars))
                 print('not full : ', self.env.not_excess_cars)
                 print('is_delivery : ', self.env.can_delivery_cars)
+                print('sum volume : ', self.env.sum_volume)
 
                 old_value = self.q_table[state, action]
                 next_max = np.max(self.q_table[next_state])
@@ -75,7 +77,6 @@ class QLearning:
                 new_value = (1 - self.alpha) * old_value + self.alpha * (reward + self.gamma * next_max)
                 self.q_table[state, action] = new_value
 
-                self.save_model(file_name)
                 print('Q table')
                 print(self.q_table)
                 print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -89,6 +90,7 @@ class QLearning:
                 if state == 15:
                     if self.env.std_volume < VOLUME_STD:
                         print('GOAL!!!!!!!!!!!!!!')
+                        self.save_model(file_name)
                         file = open('Goal_edit_std_volume_and_state.txt', 'a')
                         file.write('\nGoal_' + str(i) + '\n')
                         file.write('standard volume: ' + str(self.env.std_volume) + '\n')

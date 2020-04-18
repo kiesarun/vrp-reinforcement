@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from flask import Flask, Response, request, jsonify
 from connectDB import connectOrdersDB
+from waitress import serve
 from clusterByKmean import clusterByKmean
 from predict_16_state import predict
 from travellingSales import two_opt
@@ -15,6 +16,7 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def path():
     # try:
+    print('YAY')
     data = request.form
     db = connectOrdersDB()
     request_id = data['id']
@@ -23,28 +25,25 @@ def path():
 
     all_orders = request_obj['orders']
 
-    orders = []
-    for order in all_orders:
-        orders.append(Order(order))
-
     if data['solution'] == 'kmean':
+        orders = []
+        for order in all_orders:
+            orders.append(Order(order))
         number_of_cars = int(data['numberOfCars'])
         orders_clustered = clusterByKmean(orders, number_of_cars)
         cars = []
         for i in range(number_of_cars):
             car_orders = []
             for order in orders_clustered:
-                print(order)
                 if order.carNumber == i:
                     car_orders.append(order)
             cars.append(car_orders)
-        print('prepared')
 
         routes = []
         distance = []
         volume = []
         for car_orders in cars:
-            finish_distance, finish_route = two_opt(car_orders, 0.1, solution=data['solution'])
+            finish_distance, finish_route = two_opt(orders=car_orders, improvement_threshold=0.1, solution=data['solution'])
             routes.append(finish_route)
             distance.append(finish_distance)
             car_volume = 0
@@ -57,18 +56,19 @@ def path():
                 for k in range(len(car_orders)):
                     if routes[i][j] == k:
                         car_orders[k].deliveryOrder = j
+        status = 'finish'
 
-    elif data['solution'] == 'qlearning':
-        print('5555555555555555555555555555555')
-        cars = predict(orders)
+    if data['solution'] == 'qlearning':
+        status, result = predict(all_orders)
         distance = []
         volume = []
-        for car in cars:
+        cars = []
+        for car in result:
             distance.append(car.distance)
             volume.append(car.volume)
-
-    else:
-        pass
+            cars.append(car.orders)
+            distance.append(car.distance)
+            volume.append(car.volume)
 
     db = connectOrdersDB()
 
@@ -84,12 +84,15 @@ def path():
             order_index = find_order_by_id(order.id)
             all_orders[order_index]['carNumber'] = int(order.carNumber)
             all_orders[order_index]['deliveryOrder'] = int(order.deliveryOrder)
+            all_orders[order_index]['width'] = int(order.width)
+            all_orders[order_index]['height'] = int(order.height)
+            all_orders[order_index]['length'] = int(order.length)
+            all_orders[order_index]['coordinates'] = order.coordinate
+            print('car number: ', order.carNumber, 'deliveryOrder: ', order.deliveryOrder)
 
-    print(all_orders)
-    print(cars)
+    print('all_orders: ', all_orders)
 
-    yay = db['requests'].find_one_and_update({'_id': ObjectId(request_id)}, {'$set': {'orders': all_orders, 'status': 'finish', 'distance': distance, 'volume': volume}})
-    print(yay)
+    db['requests'].find_one_and_update({'_id': ObjectId(request_id)}, {'$set': {'orders': all_orders, 'status': status, 'distance': distance, 'volume': volume}})
 
     return jsonify({
         "finish_distance": distance
@@ -100,4 +103,4 @@ def path():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    serve(app, host='0.0.0.0', port=5000)

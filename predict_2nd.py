@@ -31,6 +31,8 @@ def model_predict(agent):
                         agent.env.move_history = []
                         print('loop ***********************************************', loop)
                         print(agent.q_table)
+                    if loop >= 15:
+                        return 'reject', agent.env.cars
 
         if loop % 2 == 0:
             action = np.argmax(agent.q_table[state])
@@ -47,31 +49,30 @@ def model_predict(agent):
                         min_diff = diff
                         action = i
                 print('old action: ', max_index, 'new_action: ', action)
-            # if loop == 5 or loop == 9 or loop == 13 or loop == 17:
-            #     max_index = action
-            #     max_value = agent.q_table[state][max_index]
-            #     min_diff = max_value
-            #     print('max index: ', max_index, 'max value: ', max_value)
-            #     for i, q_value in enumerate(agent.q_table[state]):
-            #         diff = max_value - q_value
-            #         diff_neg = - diff
-            #         if diff != 0 and min_diff > diff > diff_neg:
-            #             min_diff = diff
-            #             action = i
-            #     print('old action: ', max_index, 'new_action: ', action)
-            #
-            #     if loop == 9 or loop == 17:
-            #         max_index = action
-            #         max_value = agent.q_table[state][max_index]
-            #         min_diff = max_value
-            #         print('max index: ', max_index, 'max value: ', max_value)
-            #         for i, q_value in enumerate(agent.q_table[state]):
-            #             diff = max_value - q_value
-            #             diff_neg = - diff
-            #             if diff != 0 and min_diff > diff > diff_neg:
-            #                 min_diff = diff
-            #                 action = i
-            #         print('old action: ', max_index, 'new_action: ', action)
+                if loop % 7 == 0:
+                    max_index = action
+                    max_value = agent.q_table[state][max_index]
+                    min_diff = max_value
+                    for i, q_value in enumerate(agent.q_table[state]):
+                        diff = max_value - q_value
+                        diff_neg = - diff
+                        if diff != 0 and min_diff > diff > diff_neg:
+                            min_diff = diff
+                            action = i
+                    print('old action: ', max_index, 'new_action: ', action)
+
+                    # if loop == 13 or loop == 19:
+                    #     max_index = action
+                    #     max_value = agent.q_table[state][max_index]
+                    #     min_diff = max_value
+                    #     print('max index: ', max_index, 'max value: ', max_value)
+                    #     for i, q_value in enumerate(agent.q_table[state]):
+                    #         diff = max_value - q_value
+                    #         diff_neg = - diff
+                    #         if diff != 0 and min_diff > diff > diff_neg:
+                    #             min_diff = diff
+                    #             action = i
+                    #     print('old action: ', max_index, 'new_action: ', action)
 
         next_state = agent.env.take_action(action)
         print('current state: ', state, 'action: ', action, 'next state', next_state)
@@ -79,14 +80,17 @@ def model_predict(agent):
         state = next_state
 
         if state == 8:
-            if agent.env.std_volume < VOLUME_STD:
-                time_use = time.time() - start_time
-                # print('time : ', time_use)
-                print('standard volume: ', agent.env.std_volume, 'time: ', time_use)
-                done = True
-            # time_use = time.time() - start_time
-            # print('time : ', time_use)
-            # done = True
+            # if agent.env.std_volume < VOLUME_STD:
+            #     time_use = time.time() - start_time
+            #     print('time : ', time_use)
+            #         # print('standard volume: ', agent.env.std_volume, 'time: ', time_use)
+            #     done = True
+            time_use = time.time() - start_time
+            print('time : ', time_use)
+            print_result(agent)
+            done = True
+            return 'finish', agent.env.cars
+
 
 def print_result(agent):
     for i, car in enumerate(agent.env.cars):
@@ -98,16 +102,19 @@ def print_result(agent):
 def predict(orders):
     agent = QLearning(is_train=False, orders=orders)
     agent.env.reset()
-    model_predict(agent)
+    status, result = model_predict(agent)
 
-    for i, car in enumerate(agent.env.cars):
+    for i, car in enumerate(result):
+        print('car: ', i)
         for j in range(len(car.route)):
             delivery_index = car.route[j]
             for k, order in enumerate(car.orders):
                 if k == delivery_index:
                     order.deliveryOrder = j
+                    order.carNumber = i
+                    print('order: ', k, 'delivery_index: ', delivery_index)
 
-    return agent.env.cars
+    return status, result
 
 
 if __name__ == "__main__":
@@ -117,4 +124,3 @@ if __name__ == "__main__":
     print('model predict')
     model_predict(agent)
     print_result(agent)
-

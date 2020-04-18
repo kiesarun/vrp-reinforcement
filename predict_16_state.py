@@ -9,56 +9,62 @@ import time
 
 VOLUME_STD = 2.3
 
+
 def model_predict(agent):
     start_time = time.time()
-    agent.load_model('q-table_edit_std_volume_and_state.np')
+    agent.load_model('q-table_edit_std_volume_and_state_3rd.np')
+    print(agent.q_table)
+    agent.env.set_distance_and_centroid_and_volume_all_cars()
     done = False
     state = agent.env.get_state()
     loop = 2
     while not done:
         history_number = len(agent.env.move_history)
-        if history_number >= 6:
-            start = history_number - 6
+        if history_number >= 8:
+            start = history_number - 8
             end = history_number
-            if start + 5 < end:
-                if agent.env.move_history[start] == agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
-                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] == agent.env.move_history[start + 5]:
-                        print('loop ***********************************************')
+            if start + 7 < end:
+                if agent.env.move_history[start] == agent.env.move_history[start + 2] or agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
+                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] or agent.env.move_history[start + 5] == agent.env.move_history[start + 7]:
                         loop = loop + 1
+                        print('loop ***********************************************', loop)
                         print(agent.q_table)
                         agent.env.move_history = []
-        #             else:
-        #                 action = np.argmax(agent.q_table[state])
-        #         else:
-        #             action = np.argmax(agent.q_table[state])
-        # else:
-        #     action = np.argmax(agent.q_table[state])
+                    if loop >= 20:
+                        return 'reject', agent.env.cars
 
         if loop % 2 == 0:
             action = np.argmax(agent.q_table[state])
         else:
-            max_index = np.argmax(agent.q_table[state])
-            max_value = agent.q_table[state][max_index]
-            min_diff = max_value
-            for i, q_value in enumerate(agent.q_table[state]):
-                diff = max_value - q_value
-                if diff != 0 and diff < min_diff:
-                    min_diff = diff
-                    action = i
-        print('-------------------------------------------------------------------')
-        print('state : ', state, 'action : ', action)
+            if state == 0 or state == 4 or state == 8 or state == 12:
+                loop = loop + 1
+            else:
+                max_index = np.argmax(agent.q_table[state])
+                max_value = agent.q_table[state][max_index]
+                min_diff = max_value
+                for i, q_value in enumerate(agent.q_table[state]):
+                    diff = max_value - q_value
+                    if diff != 0 and diff < min_diff:
+                        min_diff = diff
+                        action = i
+                print('old action: ', max_index, 'new_action: ', action)
 
         next_state = agent.env.take_action(action)
+        print('state : ', state, 'action : ', action, 'next state: ', next_state)
+        print('-------------------------------------------------------------------')
         state = next_state
 
-        if state == 8:
-            # if agent.env.std_volume < VOLUME_STD:
-            time_use = time.time() - start_time
-            print('time : ', time_use)
-            done = True
+        if state == 15:
+            if agent.env.std_volume < VOLUME_STD:
+                time_use = time.time() - start_time
+                print('time : ', time_use)
+                print('standard volume', agent.env.std_volume)
+                done = True
+                return 'finish', agent.env.cars
 
 
 def print_result(agent):
+    print(agent.env.sum_volume)
     for i, car in enumerate(agent.env.cars):
         print('car : ', i)
         print('volume : \t',  car.volume)
@@ -68,55 +74,17 @@ def print_result(agent):
 def predict(orders):
     agent = QLearning(is_train=False, orders=orders)
     agent.env.reset()
-    # model_predict(agent)
+    status, result = model_predict(agent)
 
-    start_time = time.time()
-    agent.load_model('q-table_edit_std_volume_and_state.np')
-    done = False
-    state = agent.env.get_state()
-    loop = 2
-    while not done:
-        history_number = len(agent.env.move_history)
-        if history_number >= 6:
-            start = history_number - 6
-            end = history_number
-            if start + 5 < end:
-                if agent.env.move_history[start] == agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
-                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] == agent.env.move_history[start + 5]:
-                        print('loop ***********************************************')
-                        loop = loop + 1
-                        print(agent.q_table)
-                        agent.env.move_history = []
-
-        if loop % 2 == 0:
-            action = np.argmax(agent.q_table[state])
-        else:
-            max_index = np.argmax(agent.q_table[state])
-            max_value = agent.q_table[state][max_index]
-            min_diff = max_value
-            for i, q_value in enumerate(agent.q_table[state]):
-                diff = max_value - q_value
-                if diff != 0 and diff < min_diff:
-                    min_diff = diff
-                    action = i
-        print('-------------------------------------------------------------------')
-        print('state : ', state, 'action : ', action)
-        next_state = agent.env.take_action(action)
-        state = next_state
-        if state == 8:
-            # if agent.env.std_volume < VOLUME_STD:
-            time_use = time.time() - start_time
-            print('time : ', time_use)
-            done = True
-
-    for i, car in enumerate(agent.env.cars):
+    for i, car in enumerate(result):
         for j in range(len(car.route)):
             delivery_index = car.route[j]
             for k, order in enumerate(car.orders):
                 if k == delivery_index:
                     order.deliveryOrder = j
+                    order.carNumber = i
 
-    return agent.env.cars
+    return status, result
 
 
 if __name__ == "__main__":
