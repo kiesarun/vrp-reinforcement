@@ -69,6 +69,7 @@ def path():
             volume.append(car.volume)
             cars.append(car.orders)
             routes.append(car.route)
+            print(car.route)
 
         for i, car_orders in enumerate(cars):
             for j in range(len(routes[i])):
@@ -90,11 +91,13 @@ def path():
             order_index = find_order_by_id(order.id)
             all_orders[order_index]['carNumber'] = int(order.carNumber)
             all_orders[order_index]['deliveryOrder'] = int(order.deliveryOrder)
-            all_orders[order_index]['width'] = int(order.width)
-            all_orders[order_index]['height'] = int(order.height)
-            all_orders[order_index]['length'] = int(order.length)
+            all_orders[order_index]['width'] = order.width
+            all_orders[order_index]['height'] = order.height
+            all_orders[order_index]['length'] = order.length
             all_orders[order_index]['coordinates'] = order.coordinate
-            print('car number: ', order.carNumber, 'deliveryOrder: ', order.deliveryOrder)
+            print('car number: ', order.carNumber, 'deliveryOrder: ', order.deliveryOrder, 'width', order.width)
+            if order.carNumber == -1:
+                print('error')
 
     print('all_orders: ', all_orders)
 

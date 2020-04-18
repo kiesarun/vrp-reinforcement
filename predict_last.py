@@ -52,9 +52,8 @@ def predict(all_orders):
         if i == 0:
             agent.env.cars[0].orders = car
         else:
-            agent.env.add_car()
+            agent.env.add_new_empty_car()
             agent.env.cars[i].orders = car
-
 
     while not done:
         start_time = time.time()

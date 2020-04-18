@@ -377,6 +377,9 @@ class Simulator:
         reward = diff_delivery + diff_not_full + (finish_rate * 2)
         return reward
 
+    def add_new_empty_car(self):
+        self.cars.append(Car())
+
     # New ACtion
     def add_car(self):
         if self.is_train:
