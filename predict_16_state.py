@@ -11,15 +11,21 @@ VOLUME_STD = 2.3
 
 
 def model_predict(agent):
-    start_time = time.time()
     agent.load_model('q-table_edit_std_volume_and_state_3rd.np')
     print(agent.q_table)
     agent.env.set_distance_and_centroid_and_volume_all_cars()
     done = False
     state = agent.env.get_state()
     loop = 2
-    count = 0
     while not done:
+        if state == 15:
+            if agent.env.std_volume < VOLUME_STD:
+                print('standard volume', agent.env.std_volume)
+                done = True
+                for i, car in enumerate(agent.env.cars):
+                    for j, order in enumerate(car.orders):
+                        agent.env.cars[i].orders[j].carNumber = i
+                return 'finish', agent.env.cars
         history_number = len(agent.env.move_history)
         if history_number >= 8:
             start = history_number - 8
@@ -32,6 +38,11 @@ def model_predict(agent):
                         print(agent.q_table)
                         agent.env.move_history = []
                     if loop >= 20:
+                        done = True
+                        print('standard volume', agent.env.std_volume)
+                        for i, car in enumerate(agent.env.cars):
+                            for j, order in enumerate(car.orders):
+                                agent.env.cars[i].orders[j].carNumber = i
                         return 'reject', agent.env.cars
 
         if loop % 2 == 0:
@@ -53,20 +64,7 @@ def model_predict(agent):
         next_state = agent.env.take_action(action)
         print('state : ', state, 'action : ', action, 'next state: ', next_state)
         print('-------------------------------------------------------------------')
-        if state == next_state:
-            count = count + 1
-        else:
-            count = 0
         state = next_state
-
-
-        if state == 15:
-            if agent.env.std_volume < VOLUME_STD:
-                time_use = time.time() - start_time
-                print('time : ', time_use)
-                print('standard volume', agent.env.std_volume)
-                done = True
-                return 'finish', agent.env.cars
 
 
 def print_result(agent):

@@ -22,7 +22,7 @@ class Order:
             # self.length = order['length']
         self.coordinate = {
             'lat': random.uniform(13.6, 13.9),
-            'lon': random.uniform(100.1, 100.5)
+            'lon': random.uniform(100.3, 100.7)
         }
         self.width = random.uniform(10, 50)
         self.height = random.uniform(2, 100)

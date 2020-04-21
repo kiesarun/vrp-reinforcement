@@ -54,15 +54,33 @@ class Simulator:
         self.sum_volume = 0
         print('reset simulator')
 
-    def find_farthest_order(self, car_index):
+    def find_nearest_other_car_order(self, car_index):
+        nearest_distance = 10000
+        nearest_distance_order_index = ''
+        nearest_car = ''
+        for i, order in enumerate(self.cars[car_index].orders):
+            for index, car in enumerate(self.cars):
+                if index != car_index:
+                    distance = compute_distance(self.cars[index].centroid['lat'], self.cars[index].centroid['lon'], order.coordinate['lat'],
+                                                     order.coordinate['lon'])
+                    if distance <= nearest_distance:
+                        nearest_distance = distance
+                        nearest_distance_order_index = i
+                        nearest_car = index
+        # print('max distance is ', max_distance, 'order index is ', max_distance_order_index)
+        return nearest_distance_order_index, nearest_car
+
+    def find_farthest_of_other_cars_order(self, car_index):
         farthest_distance = 0
         farthest_distance_order_index = 0
         for i, order in enumerate(self.cars[car_index].orders):
-            distance = compute_distance(self.cars[car_index].centroid['lat'], self.cars[car_index].centroid['lon'], order.coordinate['lat'],
-                                             order.coordinate['lon'])
-            if distance > farthest_distance:
-                farthest_distance = distance
-                farthest_distance_order_index = i
+            for index, car in enumerate(self.cars):
+                if index != car_index:
+                    distance = compute_distance(self.cars[index].centroid['lat'], self.cars[index].centroid['lon'], order.coordinate['lat'],
+                                                     order.coordinate['lon'])
+                    if distance >= farthest_distance:
+                        farthest_distance = distance
+                        farthest_distance_order_index = i
         # print('max distance is ', max_distance, 'order index is ', max_distance_order_index)
         return farthest_distance_order_index
 
@@ -75,7 +93,7 @@ class Simulator:
             for i, car in enumerate(self.cars):
                 if i != car_index:
                     centroid_distance = compute_distance(lat, lon, car.centroid['lat'], car.centroid['lon'])
-                    if centroid_distance < min_centroid_distance:
+                    if centroid_distance <= min_centroid_distance:
                         min_centroid_distance = centroid_distance
                         nearest_car = i
 
@@ -392,7 +410,7 @@ class Simulator:
             self.cars.append(Car())
             new_car = len(self.cars) - 1
             most_order_car = self.get_max_volume_car_index()
-            farthest_order_index = self.find_farthest_order(most_order_car)
+            farthest_order_index = self.find_farthest_of_other_cars_order(most_order_car)
             self.move_order(most_order_car, new_car, farthest_order_index)
             #
 
@@ -410,7 +428,7 @@ class Simulator:
             self.cars.append(Car())
             new_car = len(self.cars) - 1
             most_order_car = self.get_max_volume_car_index()
-            farthest_order_index = self.find_farthest_order(most_order_car)
+            farthest_order_index = self.find_farthest_of_other_cars_order(most_order_car)
             self.move_order(most_order_car, new_car, farthest_order_index)
 
     def move_farthest_order_from_most_orders_to_nearest_car(self):
@@ -420,8 +438,8 @@ class Simulator:
                 pre_not_full_cars = self.not_excess_cars
 
                 most_order_car = self.get_max_volume_car_index()
-                farthest_order_index = self.find_farthest_order(most_order_car)
-                nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
+                farthest_order_index, nearest_car = self.find_nearest_other_car_order(most_order_car)
+                # nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
                 if nearest_car != most_order_car:
                     self.move_order(most_order_car, nearest_car, farthest_order_index)
 
@@ -435,8 +453,8 @@ class Simulator:
         else:
             if len(self.cars) > 1:
                 most_order_car = self.get_max_volume_car_index()
-                farthest_order_index = self.find_farthest_order(most_order_car)
-                nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
+                farthest_order_index, nearest_car = self.find_nearest_other_car_order(most_order_car)
+                # nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[most_order_car].orders[farthest_order_index].coordinate['lat'], self.cars[most_order_car].orders[farthest_order_index].coordinate['lon'], most_order_car)
                 if nearest_car != most_order_car:
                     self.move_order(most_order_car, nearest_car, farthest_order_index)
 
@@ -492,10 +510,10 @@ class Simulator:
                             if nearest_car != min_order_car_index:
                                 self.move_order(nearest_car, min_order_car_index, nearest_order)
                         elif self.cars[min_order_car_index].distance > MAX_DISTANCE:
-                            farthest_order_index = self.find_farthest_order(min_order_car_index)
+                            farthest_order_index, nearest_car = self.find_nearest_other_car_order(min_order_car_index)
                             lat = self.cars[min_order_car_index].orders[farthest_order_index].coordinate['lat']
                             lon = self.cars[min_order_car_index].orders[farthest_order_index].coordinate['lon']
-                            nearest_car, nearest_order = self.find_nearest_car_and_order(lat, lon, min_order_car_index)
+                            # nearest_car, nearest_order = self.find_nearest_car_and_order(lat, lon, min_order_car_index)
                             if nearest_car != min_order_car_index:
                                 self.move_order(min_order_car_index, nearest_car, farthest_order_index)
                         else:
@@ -535,7 +553,7 @@ class Simulator:
                             if nearest_car != min_order_car_index:
                                 self.move_order(nearest_car, min_order_car_index, nearest_order)
                         if self.cars[min_order_car_index].distance > MAX_DISTANCE:
-                            farthest_order_index = self.find_farthest_order(min_order_car_index)
+                            farthest_order_index, nearest_car = self.find_nearest_other_car_order(min_order_car_index)
                             lat = self.cars[min_order_car_index].orders[farthest_order_index].coordinate['lat']
                             lon = self.cars[min_order_car_index].orders[farthest_order_index].coordinate['lon']
                             nearest_car, nearest_order = self.find_nearest_car_and_order(lat, lon, min_order_car_index)
@@ -556,8 +574,8 @@ class Simulator:
                     if distance > max_distance:
                         car_index_max = i
                         max_distance = distance
-                farthest_order = self.find_farthest_order(car_index_max)
-                nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[car_index_max].centroid['lat'], self.cars[car_index_max].centroid['lon'], car_index_max)
+                farthest_order, nearest_car = self.find_nearest_other_car_order(car_index_max)
+                # nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[car_index_max].centroid['lat'], self.cars[car_index_max].centroid['lon'], car_index_max)
                 if nearest_car != car_index_max:
                     self.move_order(car_index_max, nearest_car, farthest_order)
 
@@ -576,8 +594,8 @@ class Simulator:
                     if distance > max_distance:
                         car_index_max = i
                         max_distance = distance
-                farthest_order = self.find_farthest_order(car_index_max)
-                nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[car_index_max].centroid['lat'], self.cars[car_index_max].centroid['lon'], car_index_max)
+                farthest_order, nearest_car = self.find_nearest_other_car_order(car_index_max)
+                # nearest_car, nearest_order = self.find_nearest_car_and_order(self.cars[car_index_max].centroid['lat'], self.cars[car_index_max].centroid['lon'], car_index_max)
                 if nearest_car != car_index_max:
                     self.move_order(car_index_max, nearest_car, farthest_order)
 
@@ -601,10 +619,10 @@ class Simulator:
                                 compare_orders = number_of_orders
                                 compare_orders_car = i
                     if check:
-                        farthest_order = self.find_farthest_order(compare_orders_car)
+                        farthest_order, nearest_car = self.find_nearest_other_car_order(compare_orders_car)
                         lat = self.cars[compare_orders_car].orders[farthest_order].coordinate['lat']
                         lon = self.cars[compare_orders_car].orders[farthest_order].coordinate['lon']
-                        nearest_car, nearest_orders = self.find_nearest_car_and_order(lat, lon, compare_orders_car)
+                        # nearest_car, nearest_orders = self.find_nearest_car_and_order(lat, lon, compare_orders_car)
                         if nearest_car != compare_orders_car:
                             self.move_order(compare_orders_car, nearest_car, farthest_order)
 
@@ -639,10 +657,10 @@ class Simulator:
                                 compare_orders = number_of_orders
                                 compare_orders_car = i
                     if check:
-                        farthest_order = self.find_farthest_order(compare_orders_car)
+                        farthest_order, nearest_car = self.find_nearest_other_car_order(compare_orders_car)
                         lat = self.cars[compare_orders_car].orders[farthest_order].coordinate['lat']
                         lon = self.cars[compare_orders_car].orders[farthest_order].coordinate['lon']
-                        nearest_car, nearest_orders = self.find_nearest_car_and_order(lat, lon, compare_orders_car)
+                        # nearest_car, nearest_orders = self.find_nearest_car_and_order(lat, lon, compare_orders_car)
                         if nearest_car != compare_orders_car:
                             self.move_order(compare_orders_car, nearest_car, farthest_order)
 

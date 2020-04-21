@@ -10,7 +10,7 @@ import math
 VOLUME_STD = 2.3
 
 
-def predict(all_orders):
+def predict_last(all_orders):
     orders = []
     sum_volume = 0
     for order in all_orders:
@@ -18,7 +18,7 @@ def predict(all_orders):
 
     for order in orders:
         sum_volume = sum_volume + order.volume
-    number_of_cars = math.ceil(sum_volume / 6500000)
+    number_of_cars = math.ceil(sum_volume / 6800000)
     print('number of cars : ', number_of_cars)
     done = False
 
@@ -56,7 +56,6 @@ def predict(all_orders):
             agent.env.cars[i].orders = car
 
     while not done:
-        start_time = time.time()
         agent.load_model('q-table_edit_std_volume_and_state_3rd.np')
         print(agent.q_table)
         agent.env.set_distance_and_centroid_and_volume_all_cars()
@@ -67,10 +66,11 @@ def predict(all_orders):
         while not done:
             if state == 15:
                 if agent.env.std_volume < VOLUME_STD:
-                    time_use = time.time() - start_time
-                    print('time : ', time_use)
                     print('standard volume', agent.env.std_volume)
                     done = True
+                    for i, car in enumerate(agent.env.cars):
+                        for j, order in enumerate(car.orders):
+                            agent.env.cars[i].orders[j].carNumber = i
                     return 'finish', agent.env.cars
 
             history_number = len(agent.env.move_history)
@@ -81,10 +81,14 @@ def predict(all_orders):
                     if agent.env.move_history[start] == agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
                         if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] == agent.env.move_history[start + 5]:
                             loop = loop + 1
-                            print('loop ***********************************************', loop)
-                            print(agent.q_table)
+                            # print('loop ***********************************************', loop)
+                            # print(agent.q_table)
                             agent.env.move_history = []
                         if loop >= 20:
+                            print('standard volume', agent.env.std_volume)
+                            for i, car in enumerate(agent.env.cars):
+                                for j, order in enumerate(car.orders):
+                                    agent.env.cars[i].orders[j].carNumber = i
                             return 'reject', agent.env.cars
 
             if loop % 2 == 0:
@@ -101,7 +105,7 @@ def predict(all_orders):
                         if diff != 0 and diff < min_diff:
                             min_diff = diff
                             action = i
-                    print('old action: ', max_index, 'new_action: ', action)
+                    # print('old action: ', max_index, 'new_action: ', action)
 
             next_state = agent.env.take_action(action)
             print('state : ', state, 'action : ', action, 'next state: ', next_state)
@@ -109,3 +113,4 @@ def predict(all_orders):
             if action == 0:
                 loop = loop + 1
             state = next_state
+

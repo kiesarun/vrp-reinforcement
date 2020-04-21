@@ -5,10 +5,12 @@ from flask import Flask, Response, request, jsonify
 from connectDB import connectOrdersDB
 from waitress import serve
 from clusterByKmean import clusterByKmean
-from predict_last import predict
+from predict_last import predict_last
+from predict_16_state import predict
 from travellingSales import two_opt
 from bson.objectid import ObjectId
 from orders import Order
+import time
 
 app = Flask(__name__)
 
@@ -16,7 +18,6 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def path():
     # try:
-    print('YAY')
     data = request.form
     db = connectOrdersDB()
     request_id = data['id']
@@ -26,6 +27,8 @@ def path():
     all_orders = request_obj['orders']
 
     if data['solution'] == 'kmean':
+        print('running kmean')
+        start_time = time.time()
         orders = []
         for order in all_orders:
             orders.append(Order(order))
@@ -56,10 +59,17 @@ def path():
                 for k in range(len(car_orders)):
                     if routes[i][j] == k:
                         car_orders[k].deliveryOrder = j
+        time_use = time.time() - start_time
+        print('kmean finish', 'time: ', time_use)
+        for i, car_orders in enumerate(cars):
+            print('car ', i, 'distance: ', distance[i], 'volume: ', volume[i])
         status = 'finish'
 
     if data['solution'] == 'qlearning':
+        print('running qlearning')
+        start_time = time.time()
         status, result = predict(all_orders)
+        print('finish')
         distance = []
         volume = []
         cars = []
@@ -69,13 +79,43 @@ def path():
             volume.append(car.volume)
             cars.append(car.orders)
             routes.append(car.route)
-            print(car.route)
 
         for i, car_orders in enumerate(cars):
             for j in range(len(routes[i])):
                 for k in range(len(car_orders)):
                     if routes[i][j] == k:
                         car_orders[k].deliveryOrder = j
+
+        time_use = time.time() - start_time
+        print('qlearning', status, 'time: ', time_use)
+        for i, car_orders in enumerate(cars):
+            print('car ', i, 'distance: ', distance[i], 'volume: ', volume[i])
+
+    if data['solution'] == 'kmean and qlearning':
+        print('running kmean and qlearning')
+        start_time = time.time()
+        status, result = predict_last(all_orders)
+        print('finish')
+        distance = []
+        volume = []
+        cars = []
+        routes = []
+        for car in result:
+            distance.append(car.distance)
+            volume.append(car.volume)
+            cars.append(car.orders)
+            routes.append(car.route)
+
+        for i, car_orders in enumerate(cars):
+            for j in range(len(routes[i])):
+                for k in range(len(car_orders)):
+                    if routes[i][j] == k:
+                        car_orders[k].deliveryOrder = j
+
+        time_use = time.time() - start_time
+        print('kmean and qlearning', status, 'time: ', time_use)
+        for i, car_orders in enumerate(cars):
+            print('car ', i, 'distance: ', distance[i], 'volume: ', volume[i])
 
     db = connectOrdersDB()
 
@@ -95,13 +135,12 @@ def path():
             all_orders[order_index]['height'] = order.height
             all_orders[order_index]['length'] = order.length
             all_orders[order_index]['coordinates'] = order.coordinate
-            print('car number: ', order.carNumber, 'deliveryOrder: ', order.deliveryOrder, 'width', order.width)
-            if order.carNumber == -1:
-                print('error')
+            # print('car number: ', order.carNumber, 'deliveryOrder: ', order.deliveryOrder)
 
-    print('all_orders: ', all_orders)
 
-    db['requests'].find_one_and_update({'_id': ObjectId(request_id)}, {'$set': {'orders': all_orders, 'status': status, 'distance': distance, 'volume': volume}})
+    # print('all_orders: ', all_orders)
+
+    db['requests'].find_one_and_update({'_id': ObjectId(request_id)}, {'$set': {'orders': all_orders, 'status': status, 'distance': distance, 'volume': volume, 'numberOfCars': len(distance)}})
 
     return jsonify({
         "finish_distance": distance
