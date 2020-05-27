@@ -1,9 +1,4 @@
-import random
 import numpy as np
-
-# random.seed(5555)
-# np.random.seed(5555)
-
 from q_learning_edit_std_volume_and_state import QLearning
 import time
 
@@ -17,6 +12,8 @@ def model_predict(agent):
     done = False
     state = agent.env.get_state()
     loop = 2
+    count = 0
+    pre_action = 0
     while not done:
         if state == 15:
             if agent.env.std_volume < VOLUME_STD:
@@ -27,12 +24,12 @@ def model_predict(agent):
                         agent.env.cars[i].orders[j].carNumber = i
                 return 'finish', agent.env.cars
         history_number = len(agent.env.move_history)
-        if history_number >= 8:
-            start = history_number - 8
+        if history_number >= 6:
+            start = history_number - 6
             end = history_number
-            if start + 7 < end:
-                if agent.env.move_history[start] == agent.env.move_history[start + 2] or agent.env.move_history[start + 2] == agent.env.move_history[start + 4]:
-                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] or agent.env.move_history[start + 3] == agent.env.move_history[start + 5]:
+            if start + 5 < end:
+                if agent.env.move_history[start] == agent.env.move_history[start + 2] == agent.env.move_history[start + 4] or count == agent.env.get_max_order():
+                    if agent.env.move_history[start + 1] == agent.env.move_history[start + 3] == agent.env.move_history[start + 5] or count == agent.env.get_max_order():
                         loop = loop + 1
                         print('loop ***********************************************', loop)
                         print(agent.q_table)
@@ -59,12 +56,21 @@ def model_predict(agent):
                     if diff != 0 and diff < min_diff:
                         min_diff = diff
                         action = i
-                print('old action: ', max_index, 'new_action: ', action)
-
+                # if action == 0:
+                #     loop = loop + 1
+                # print('old action: ', max_index, 'new_action: ', action)
         next_state = agent.env.take_action(action)
         print('state : ', state, 'action : ', action, 'next state: ', next_state)
         print('-------------------------------------------------------------------')
+
+        if state == next_state and action == pre_action:
+            count = count + 1
+        else:
+            count = 0
+
+        print(count)
         state = next_state
+        pre_action = action
 
 
 def print_result(agent):

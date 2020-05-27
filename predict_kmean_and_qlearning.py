@@ -1,8 +1,7 @@
-from clusterByKmean import clusterByKmean
-from orders import Order
-from travellingSales import two_opt
-import random
 import numpy as np
+from cluster_by_kmean import clusterByKmean
+from orders import Order
+from travelling_sales import two_opt
 from q_learning_edit_std_volume_and_state import QLearning
 import time
 import math
@@ -18,7 +17,7 @@ def predict_last(all_orders):
 
     for order in orders:
         sum_volume = sum_volume + order.volume
-    number_of_cars = math.ceil(sum_volume / 6800000)
+    number_of_cars = math.ceil(sum_volume / 6990000)
     print('number of cars : ', number_of_cars)
     done = False
 
@@ -105,12 +104,12 @@ def predict_last(all_orders):
                         if diff != 0 and diff < min_diff:
                             min_diff = diff
                             action = i
+                    if action == 0:
+                        loop = loop + 1
                     # print('old action: ', max_index, 'new_action: ', action)
 
             next_state = agent.env.take_action(action)
             print('state : ', state, 'action : ', action, 'next state: ', next_state)
             print('-------------------------------------------------------------------')
-            if action == 0:
-                loop = loop + 1
             state = next_state
 

@@ -1,4 +1,4 @@
-from travellingSales import two_opt
+from travelling_sales import two_opt
 import numpy as np
 
 class Car:

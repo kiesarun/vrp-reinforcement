@@ -7,6 +7,7 @@ RUN pip install flask
 RUN pip install pymongo
 RUN pip install python-dotenv
 RUN pip install mlrose
+RUN pip install waitress
 
 RUN mkdir /app
 

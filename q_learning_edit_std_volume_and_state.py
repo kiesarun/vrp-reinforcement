@@ -1,5 +1,8 @@
 import numpy as np
 import random
+
+# random.seed(5555)
+# np.random.seed(5555)
 # import winsound
 # from IPython.display import clear_output
 from orders import Order
@@ -20,7 +23,6 @@ class QLearning:
         self.gamma = 0.89
         self.epsilon = 0.5
         self.state_value = []
-
         self.all_epochs = []
         self.all_penalties = []
         self.q_table = np.zeros((16, 7))

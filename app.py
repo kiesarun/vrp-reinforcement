@@ -1,13 +1,12 @@
 from dotenv import load_dotenv
-
 load_dotenv()
 from flask import Flask, Response, request, jsonify
 from connectDB import connectOrdersDB
 from waitress import serve
-from clusterByKmean import clusterByKmean
-from predict_last import predict_last
+from cluster_by_kmean import clusterByKmean
+from predict_kmean_and_qlearning import predict_last
 from predict_16_state import predict
-from travellingSales import two_opt
+from travelling_sales import two_opt
 from bson.objectid import ObjectId
 from orders import Order
 import time

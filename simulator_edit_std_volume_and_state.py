@@ -1,4 +1,9 @@
+import random
 import numpy as np
+
+# random.seed(5555)
+# np.random.seed(5555)
+
 import copy
 from math import cos, asin, sqrt
 from car import Car
@@ -126,6 +131,14 @@ class Simulator:
                 car_index = i
                 max_orders = number_of_order
         return car_index
+
+    def get_max_order(self):
+        max_orders = 0
+        for car in self.cars:
+            number_of_order = len(car.orders)
+            if number_of_order > max_orders:
+                max_orders = number_of_order
+        return max_orders
 
     def get_max_volume_car_index(self):
         max_volume, car_index = 0, 0

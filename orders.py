@@ -1,5 +1,9 @@
 import string
 import random
+import numpy as np
+
+# random.seed(5555)
+# np.random.seed(5555)
 
 
 def random_string(string_length=10):
@@ -13,13 +17,6 @@ class Order:
             self.id = random_string()
         else:
             self.id = order['_id']
-            # self.coordinate = {
-            #     'lat': order['coordinates']['lat'],
-            #     'lon': order['coordinates']['lon']
-            # }
-            # self.width = order['width']
-            # self.height = order['height']
-            # self.length = order['length']
         self.coordinate = {
             'lat': random.uniform(13.6, 13.9),
             'lon': random.uniform(100.3, 100.7)
